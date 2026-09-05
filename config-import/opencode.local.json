@@ -1,0 +1,50 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "subagent_depth": 2,
+  "plugin": [
+    "opencode-ignore"
+  ],
+  "model": "opencode-go/deepseek-v4-flash",
+  "small_model": "opencode-go/deepseek-v4-flash",
+  "agent": {
+    "build": {
+      "model": "opencode-go/glm-5.3-flash",
+      "variant": "max"
+    },
+    "plan": {
+      "model": "opencode-go/glm-5.3-flash",
+      "variant": "max"
+    },
+    "sidekick": {
+      "model": "opencode-go/deepseek-v4-flash",
+      "variant": "max"
+    },
+    "explore": {
+      "model": "opencode-go/deepseek-v4-flash",
+      "variant": "max"
+    },
+    "research": {
+      "model": "opencode-go/deepseek-v4-flash",
+      "variant": "max"
+    },
+    "design": {
+      "model": "opencode-go/glm-5.3-flash",
+      "variant": "max"
+    },
+    "reviewer": {
+      "model": "opencode-go/glm-5.3-flash",
+      "variant": "max"
+    },
+    "vision": {
+      "model": "opencode-go/glm-5.3-flash",
+      "variant": "max"
+    }
+  },
+  "mcp": {
+    "unreal-mcp": {
+      "type": "remote",
+      "url": "http://127.0.0.1:8000/mcp",
+      "enabled": true
+    }
+  }
+}
