@@ -16,6 +16,7 @@ import { useSSE } from "@/hooks/useSSE";
 import { useDialogParam } from "@/hooks/useDialogParam";
 import { useWorktreeTab } from "@/hooks/useWorktreeTab";
 import { WorktreeTabs } from "@/components/repo/WorktreeTabs";
+import { LocalWorktreeDialog } from "@/components/repo/LocalWorktreeDialog";
 import { WorkspaceManager } from "@/components/repo/WorkspaceManager";
 import { OPENCODE_API_ENDPOINT } from "@/config";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ export function RepoDetail() {
   const [sourceControlOpen, setSourceControlOpen] = useDialogParam('sourceControl');
   const [resetPermissionsOpen, setResetPermissionsOpen] = useDialogParam('resetPermissions');
   const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
+  const [localWorktreeOpen, setLocalWorktreeOpen] = useState(false);
   const [workspaceSelectorOpen, setWorkspaceSelectorOpen] = useState(false);
   const [activeWorkspaceDirectory, setActiveWorkspaceDirectory] = useState<string | undefined>();
   const { activeTab, setActiveTab } = useWorktreeTab();
@@ -232,6 +234,7 @@ export function RepoDetail() {
         activeWorkspaceLabel={activeWorkspaceLabel}
         onCreateWorkspace={() => setCreateWorkspaceOpen(true)}
         onWorkspaceMenu={handleOpenWorkspaceSelector}
+        onCreateLocalWorktree={() => setLocalWorktreeOpen(true)}
       />
 
       <WorkspaceManager
@@ -263,6 +266,8 @@ export function RepoDetail() {
         onCreate={handleCreateWorkspace}
         isCreating={createWorkspace.isPending}
       />
+
+      <LocalWorktreeDialog open={localWorktreeOpen} onOpenChange={setLocalWorktreeOpen} repoId={repoId} />
 
       <FileBrowserSheet
         isOpen={fileBrowserOpen}
