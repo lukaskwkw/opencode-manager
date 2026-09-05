@@ -198,9 +198,16 @@ try {
   await installAssistantWorkspace({ db })
   logger.info('Assistant workspace installed')
 
-  ipcServer = await createIPCServer(process.env.STORAGE_PATH || undefined)
+  try {
+    ipcServer = await createIPCServer(process.env.STORAGE_PATH || undefined)
+    logger.info(`Git IPC server running at ${ipcServer.ipcHandlePath}`)
+  } catch (error) {
+    // Windows + Bun cannot listen on named pipes (ENOENT) - continue without
+    // the git IPC server; stored-credential git flows stay degraded until fixed.
+    logger.warn('Git IPC server unavailable, continuing without it:', error)
+    ipcServer = undefined
+  }
   await gitAuthService.initialize(ipcServer, db)
-  logger.info(`Git IPC server running at ${ipcServer.ipcHandlePath}`)
 
   await syncAdminFromEnv(auth, db)
 
