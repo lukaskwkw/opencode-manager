@@ -133,6 +133,7 @@ export function RepoList() {
   const { preferences, updateSettings } = useSettings()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [repoToDelete, setRepoToDelete] = useState<number | null>(null)
+  const [removeContent, setRemoveContent] = useState(false)
   const [selectedRepos, setSelectedRepos] = useState<Set<number>>(new Set())
   const [selectionMode, setSelectionMode] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -166,6 +167,8 @@ export function RepoList() {
   const repoForDelete = useMemo(() => {
     return repoToDelete ? repos?.find(r => r.id === repoToDelete) : null
   }, [repoToDelete, repos])
+
+  const showRemoveContent = !!repoForDelete?.isLocal && !!repoForDelete?.isWorktree
 
   const { hasLocalRepos, hasClonedRepos } = useMemo(() => {
     if (!repos) return { hasLocalRepos: false, hasClonedRepos: false }
@@ -209,11 +212,12 @@ export function RepoList() {
   }, [viewModels])
 
   const deleteMutation = useMutation({
-    mutationFn: deleteRepo,
+    mutationFn: ({ id, deleteFiles }: { id: number; deleteFiles?: boolean }) => deleteRepo(id, deleteFiles),
     onSuccess: () => {
       invalidateRepoListCaches(queryClient)
       setDeleteDialogOpen(false)
       setRepoToDelete(null)
+      setRemoveContent(false)
     },
   })
 
@@ -483,12 +487,17 @@ export function RepoList() {
 
       <DeleteDialog
         open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        onOpenChange={(open: boolean) => {
+          setDeleteDialogOpen(open)
+          if (!open) {
+            setRemoveContent(false)
+          }
+        }}
         onConfirm={() => {
           if (selectedRepos.size > 0) {
             batchDeleteMutation.mutate(Array.from(selectedRepos))
           } else if (repoToDelete) {
-            deleteMutation.mutate(repoToDelete)
+            deleteMutation.mutate({ id: repoToDelete, deleteFiles: showRemoveContent ? (removeContent || undefined) : undefined })
           }
         }}
         onCancel={() => {
@@ -518,7 +527,28 @@ export function RepoList() {
                 ? `Are you sure you want to unlink ${selectedRepos.size} repositor${selectedRepos.size === 1 ? "y" : "ies"}? Only workspace references will be removed. Your original files will not be affected.`
                 : `Are you sure you want to delete ${selectedRepos.size} repositor${selectedRepos.size === 1 ? "y" : "ies"}? Cloned repositories will have their local files removed. Locally discovered repositories will only have their workspace references removed — original files will not be affected.`
             : repoForDelete?.isLocal
-              ? (
+              ? (showRemoveContent ? (
+                <>
+                  {removeContent
+                    ? 'Are you sure you want to unlink this repository AND delete its worktree content? The worktree directory and its branch will be permanently deleted. This action cannot be undone.'
+                    : 'Are you sure you want to unlink this repository? Only the workspace reference will be removed; the worktree will stay on disk.'}
+                  {repoForDelete.sourcePath && (
+                    <>
+                      {' '}Path:{' '}
+                      <span className="font-mono text-xs">{repoForDelete.sourcePath}</span>
+                    </>
+                  )}
+                  <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-red-600"
+                      checked={removeContent}
+                      onChange={(e) => setRemoveContent(e.target.checked)}
+                    />
+                    Also remove worktree content from disk
+                  </label>
+                </>
+              ) : (
                 <>
                   Are you sure you want to unlink this repository? Only the workspace reference will be removed.
                   {repoForDelete.sourcePath && (
@@ -529,7 +559,7 @@ export function RepoList() {
                     </>
                   )}
                 </>
-              )
+              ))
               : "Are you sure you want to delete this repository? This will remove all local files. This action cannot be undone."
         }
         isDeleting={deleteMutation.isPending || batchDeleteMutation.isPending}

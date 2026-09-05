@@ -930,6 +930,29 @@ export async function pullRepo(
   }
 }
 
+export async function unlinkRepoFiles(database: Database, repoId: number): Promise<void> {
+  const repo = getRepoById(database, repoId)
+  if (!repo) {
+    throw new Error(`Repo not found: ${repoId}`)
+  }
+
+  const fullPath = path.resolve(getReposPath(), repo.localPath)
+
+  // Remove only the manager-side junction/symlink (never the target content).
+  // For repos registered directly inside the workspace the lstat is a real
+  // directory, so nothing is removed from disk - only the DB row below.
+  try {
+    const st = await fs.lstat(fullPath)
+    if (st.isSymbolicLink()) {
+      await fs.rm(fullPath, { force: true })
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+  }
+
+  deleteRepo(database, repoId)
+}
+
 export async function deleteRepoFiles(database: Database, repoId: number): Promise<void> {
   const repo = getRepoById(database, repoId)
   if (!repo) {
@@ -945,7 +968,10 @@ export async function deleteRepoFiles(database: Database, repoId: number): Promi
     await removeWorktree(baseRepoPath, fullPath)
   }
 
-  await executeCommand(['rm', '-rf', repo.localPath], getReposPath())
+  // NOTE (Windows port): upstream spawned rm minus rf binary which does not exist on Windows.
+  // rmSync on a junction or symlink removes the link only (same as Linux behavior),
+  // on a real directory (cloned repos) it removes the clone.
+  rmSync(fullPath, { recursive: true, force: true })
   deleteRepo(database, repoId)
 }
 
