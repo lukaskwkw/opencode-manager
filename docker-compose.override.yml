@@ -1,0 +1,17 @@
+services:
+  app:
+    environment:
+      - OPENCODE_IMPORT_CONFIG_PATH=/import/opencode-config/opencode.json
+      - OPENCODE_IMPORT_STATE_PATH=/import/opencode-state
+      - REPO_BROWSE_ROOT=${REPO_BROWSE_ROOT}
+      - OPENCODE_SERVER_PASSWORD=${OPENCODE_SERVER_PASSWORD}
+      - GIT_CONFIG_GLOBAL=/import/gitconfig
+    volumes:
+      - ${OCM_REPOS_HOST_PATH}:${OCM_REPOS_HOST_PATH}:rw
+      - ${OCM_OPENCODE_CONFIG_HOST_PATH}:/import/opencode-config:ro
+      - ${OCM_OPENCODE_STATE_HOST_PATH}:/import/opencode-state:ro
+      - ${OCM_FUSION_AGENTS_HOST_PATH}:/workspace/.config/opencode/agent:rw
+      - ${OCM_FUSION_PLUGINS_HOST_PATH}:/workspace/.config/opencode/plugins:rw
+      - ${OCM_FUSION_COMMANDS_HOST_PATH}:/workspace/.config/opencode/commands:rw
+      - ./gitconfig:/import/gitconfig:ro
+      - ${OCM_DEV_HOST_PATH}:${OCM_DEV_HOST_PATH}:rw
