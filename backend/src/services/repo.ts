@@ -1006,6 +1006,16 @@ async function removeWorkspaceAlias(aliasPath: string): Promise<void> {
   }
 }
 
+export async function unlinkRepoFiles(database: Database, repoId: number): Promise<void> {
+  const repo = getRepoById(database, repoId)
+  if (!repo) {
+    throw new Error(`Repo not found: ${repoId}`)
+  }
+
+  await removeWorkspaceAlias(path.resolve(getReposPath(), repo.localPath))
+  deleteRepo(database, repoId)
+}
+
 export async function deleteRepoFiles(database: Database, repoId: number): Promise<void> {
   const repo = getRepoById(database, repoId)
   if (!repo) {
@@ -1022,11 +1032,15 @@ export async function deleteRepoFiles(database: Database, repoId: number): Promi
       await removeWorktree(baseRepoPath, fullPath)
     }
 
-    await executeCommand(['rm', '-rf', repo.localPath], getReposPath())
+    if (repo.isLocal) {
+      await removeWorkspaceAlias(fullPath)
+    } else {
+      rmSync(fullPath, { recursive: true, force: true })
+    }
   } else if (repo.isLocal) {
     await removeWorkspaceAlias(fullPath)
   } else {
-    await executeCommand(['rm', '-rf', repo.localPath], getReposPath())
+    rmSync(fullPath, { recursive: true, force: true })
   }
 
   deleteRepo(database, repoId)

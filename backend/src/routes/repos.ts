@@ -6,6 +6,7 @@ import type { DeleteRepoResult, Repo } from '@opencode-manager/shared/types'
 import { DiscoverReposRequestSchema, AssistantModeInitRequestSchema, UpdateRepoRequestSchema, CreateRepoWorkspaceRequestSchema, DeleteRepoRequestSchema } from '@opencode-manager/shared/schemas'
 import { listRepos, getRepoById, updateLastAccessed, getRepoGitCredentialId, setRepoGitCredentialId, updateRepoName } from '../db/queries'
 import * as repoService from '../services/repo'
+import * as localWorktreeService from '../services/local-worktree'
 import * as archiveService from '../services/archive'
 import { SettingsService } from '../services/settings'
 import { getEffectiveGitIdentity, setRepoGitIdentity } from '../services/git-identity'
@@ -383,6 +384,73 @@ app.get('/', async (c) => {
     }
   })
 
+  app.get('/:id/local-worktree-info', async (c) => {
+    try {
+      const id = parseInt(c.req.param('id'))
+      if (Number.isNaN(id)) return c.json({ error: 'Invalid repo id' }, 400)
+      const info = await localWorktreeService.getLocalWorktreeInfo(database, gitAuthService, id)
+      return c.json(info)
+    } catch (error: unknown) {
+      logger.error('Failed to get local worktree info:', error)
+      return c.json({ error: getErrorMessage(error) }, 500)
+    }
+  })
+
+  app.post('/:id/local-worktrees', async (c) => {
+    try {
+      const id = parseInt(c.req.param('id'))
+      if (Number.isNaN(id)) return c.json({ error: 'Invalid repo id' }, 400)
+      const body = (await c.req.json().catch(() => ({}))) as { branch?: unknown; steps?: unknown }
+      const branch = typeof body.branch === 'string' ? body.branch : ''
+      const stepsRaw = (body.steps ?? {}) as { verifyVscode?: unknown; build?: unknown }
+      const job = await localWorktreeService.createLocalWorktree({
+        database,
+        gitAuthService,
+        repoId: id,
+        branch,
+        steps: { verifyVscode: stepsRaw.verifyVscode !== false, build: stepsRaw.build === true },
+      })
+      return c.json({ jobId: job.id, slug: job.slug, directory: job.directory, branch: job.branch }, 202)
+    } catch (error: unknown) {
+      const message = getErrorMessage(error)
+      const status = /already exists|required|Invalid branch|not set|must be an absolute|not a git repository/i.test(message) ? 400 : 500
+      logger.error('Failed to create local worktree:', error)
+      return c.json({ error: message }, status as ContentfulStatusCode)
+    }
+  })
+
+  app.get('/:id/local-worktrees/jobs/:jobId', async (c) => {
+    try {
+      const id = parseInt(c.req.param('id'))
+      if (Number.isNaN(id)) return c.json({ error: 'Invalid repo id' }, 400)
+      const job = localWorktreeService.getLocalWorktreeJob(c.req.param('jobId'))
+      if (job.repoId !== id) return c.json({ error: 'Job not found' }, 404)
+      return c.json(job)
+    } catch (error: unknown) {
+      return c.json({ error: getErrorMessage(error) }, 404)
+    }
+  })
+
+  app.delete('/:id/local-worktree', async (c) => {
+    try {
+      const id = parseInt(c.req.param('id'))
+      if (Number.isNaN(id)) return c.json({ error: 'Invalid repo id' }, 400)
+      const body = (await c.req.json().catch(() => ({}))) as { directory?: unknown }
+      if (typeof body.directory !== 'string' || !body.directory.trim()) {
+        return c.json({ error: 'directory is required' }, 400)
+      }
+      const result = await localWorktreeService.deleteLocalWorktree({
+        database,
+        gitAuthService,
+        repoId: id,
+        directory: body.directory,
+      })
+      return c.json(result)
+    } catch (error: unknown) {
+      logger.error('Failed to delete local worktree:', error)
+      return c.json({ error: getErrorMessage(error) }, getStatusCode(error) as ContentfulStatusCode)
+    }
+  })
   app.delete('/:id', async (c) => {
     try {
       const id = parseInt(c.req.param('id'))
@@ -396,22 +464,36 @@ app.get('/', async (c) => {
       if (!repo) {
         return c.json({ error: 'Repo not found' }, 404)
       }
-
       const body = await c.req.json().catch(() => null)
       const parsed = DeleteRepoRequestSchema.safeParse(body ?? {})
       if (!parsed.success) {
         return c.json({ error: 'Invalid request' }, 400)
       }
-      const { deleteBranch } = parsed.data
+      const { deleteBranch: requestedDeleteBranch } = parsed.data
 
-      if (deleteBranch !== 'none' && !repo.isWorktree) {
+      if (requestedDeleteBranch !== 'none' && !repo.isWorktree) {
         return c.json({ error: 'Only worktrees can delete their branch' }, 400)
       }
+
+      const deleteBranch = repo.isLocal && repo.isWorktree ? 'none' : requestedDeleteBranch
+      const deleteFilesParam = c.req.query('deleteFiles')
+      const deleteFiles = deleteFilesParam !== undefined ? deleteFilesParam === 'true' : !repo.isLocal
 
       const removeWorktree = async () => {
         await scheduleService.prepareRepoDelete(id)
         await repoWorkspaces.removeRepoTerminals(repo)
-        await repoService.deleteRepoFiles(database, id)
+        if (!deleteFiles) {
+          await repoService.unlinkRepoFiles(database, id)
+        } else if (repo.isLocal && repo.isWorktree && repo.sourcePath) {
+          await localWorktreeService.deleteLocalWorktree({
+            database,
+            gitAuthService,
+            repoId: id,
+            directory: repo.sourcePath,
+          })
+        } else {
+          await repoService.deleteRepoFiles(database, id)
+        }
       }
 
       const result: DeleteRepoResult = { success: true }
