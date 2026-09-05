@@ -1,0 +1,28 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+[2026-09-05T10:25:26.593Z] [INFO] Database schema is up to date
+[2026-09-05T10:25:26.599Z] [INFO] Database initialized successfully
+[2026-09-05T10:25:26.610Z] [INFO] Workspace directories initialized
+[2026-09-05T10:25:26.612Z] [INFO] Found workspace config at D:\dev\opencode-manager\workspace\.config\opencode\opencode.json, syncing to database...
+[2026-09-05T10:25:26.630Z] [INFO] Updated OpenCode config 'default' for user: default
+[2026-09-05T10:25:26.631Z] [INFO] Updated database config from workspace file
+[2026-09-05T10:25:26.685Z] [INFO] Assistant workspace installed
+[2026-09-05T10:25:26.697Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:25:26.705Z] [INFO] 🚀 OpenCode WebUI API running on http://0.0.0.0:5003
+[2026-09-05T10:25:26.706Z] [INFO] Registering 0 enabled schedule jobs
+[2026-09-05T10:25:27.720Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:25:29.723Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:25:33.726Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:25:34.932Z] [INFO] /dev/kvm is not available or not writable; pass --device /dev/kvm and run on a KVM-capable Linux host
+[2026-09-05T10:25:41.727Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:25:57.728Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:26:27.731Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:26:57.733Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:27:27.735Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:27:57.737Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:28:27.739Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:28:57.741Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:29:27.743Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:29:57.745Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:30:27.746Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:30:57.749Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event
+[2026-09-05T10:31:27.751Z] [INFO] SSE connecting to OpenCode global stream: http://127.0.0.1:5551/global/event

@@ -13,6 +13,7 @@
     "start": "concurrently \"pnpm:start:backend\" \"pnpm:start:frontend\"",
     "start:backend": "bun run backend/dist/index.js",
     "start:frontend": "pnpm --filter frontend preview",
+    "start:local": "bun run backend/dist/index.js",
     "build": "pnpm run build:cli && pnpm run build:backend && pnpm run build:frontend",
     "build:cli": "pnpm --filter @opencode-manager/ocm-cli build",
     "build:backend": "pnpm --filter backend build",
