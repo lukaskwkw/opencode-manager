@@ -26,6 +26,7 @@ import { useToolPanel } from "@/hooks/useToolPanel";
 import { ToolSidePanel } from "@/components/navigation/ToolSidePanel";
 import { WorktreeTabs } from "@/components/repo/WorktreeTabs";
 import { WorktreeSessionGroups } from "@/components/repo/WorktreeSessionGroups";
+import { LocalWorktreeDialog } from "@/components/repo/LocalWorktreeDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +53,7 @@ export function RepoDetail() {
   const [resetPermissionsOpen, setResetPermissionsOpen] = useDialogParam('resetPermissions');
   const [multiRunOpen, setMultiRunOpen] = useDialogParam('multiRun');
   const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
+  const [localWorktreeOpen, setLocalWorktreeOpen] = useState(false);
   const { activeTab, setActiveTab } = useWorktreeTab();
   const openTerminal = useOpenTerminal();
   const terminalDirectory = useTerminalDirectoryParam();
@@ -284,6 +286,7 @@ export function RepoDetail() {
         onValueChange={setActiveTab}
         baseLabel={currentBranch}
         onCreateWorkspace={() => setCreateWorkspaceOpen(true)}
+        onCreateLocalWorktree={() => setLocalWorktreeOpen(true)}
       />
 
       <div className="flex-1 flex flex-col min-h-0">
@@ -304,6 +307,8 @@ export function RepoDetail() {
         onCreate={handleCreateWorkspace}
         isCreating={createWorkspace.isPending}
       />
+
+      <LocalWorktreeDialog open={localWorktreeOpen} onOpenChange={setLocalWorktreeOpen} repoId={repoId} />
 
       <FileBrowserSheet
         isOpen={!docked && fileBrowserOpen}
