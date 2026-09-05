@@ -11,6 +11,7 @@ interface WorktreeTabsProps {
   activeWorkspaceLabel?: string
   onCreateWorkspace?: () => void
   onWorkspaceMenu?: () => void
+  onCreateLocalWorktree?: () => void
 }
 
 export function WorktreeTabs({
@@ -21,6 +22,7 @@ export function WorktreeTabs({
   activeWorkspaceLabel,
   onCreateWorkspace,
   onWorkspaceMenu,
+  onCreateLocalWorktree,
 }: WorktreeTabsProps) {
   const hasWorkspaces = workspaces.length > 0
   const workspaceLabel = value === 'workspaces' && activeWorkspaceLabel ? activeWorkspaceLabel : 'Workspaces'
@@ -35,7 +37,18 @@ export function WorktreeTabs({
           <TabsTrigger value="repo" className={tabClassName}>
             <GitBranch className="h-3 w-3 shrink-0" />
             <span className={`min-w-0 truncate ${activeLabelClassName}`}>{baseLabel}</span>
-          </TabsTrigger>
+          </TabsTrigger>          {onCreateLocalWorktree && (
+            <button
+              type="button"
+              onClick={onCreateLocalWorktree}
+              title="New local worktree (WORKSPACE_FULL_PATH)"
+              className="inline-flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground sm:flex-none sm:px-3"
+            >
+              <GitBranch className="h-3 w-3 shrink-0 text-green-400" />
+              <span className="min-w-0 truncate">Worktree</span>
+              <Plus className="h-3.5 w-3.5 shrink-0" />
+            </button>
+          )}
           {hasWorkspaces ? (
             <>
               <TabsTrigger value="workspaces" className={tabClassName} onClick={onWorkspaceMenu}>
