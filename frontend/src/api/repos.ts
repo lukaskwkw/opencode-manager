@@ -76,16 +76,73 @@ export async function createRepoWorkspace(repoId: number, request: CreateRepoWor
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   })
+}export interface LocalWorktreeInfo {
+  rootConfigured: boolean
+  root: string | null
+  ueProject: string | null
+  baseBranch: string | null
+  engineConfigured: boolean
 }
 
 export type DeleteBranchChoice = NonNullable<DeleteRepoRequest['deleteBranch']>
 
 export interface DeleteRepoOptions {
   deleteBranch?: DeleteBranchChoice
+  deleteFiles?: boolean
+}
+
+export interface LocalWorktreeStep {
+  key: string
+  label: string
+  status: 'pending' | 'running' | 'ok' | 'warning' | 'failed' | 'skipped'
+  message?: string
+  durationMs?: number
+}
+
+export interface LocalWorktreeJob {
+  id: string
+  repoId: number
+  branch: string
+  slug: string
+  directory: string
+  status: 'running' | 'done' | 'failed'
+  steps: LocalWorktreeStep[]
+  logTail: string
+  linkedRepoId?: number
+  error?: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface LocalWorktreeCreateResult {
+  jobId: string
+  slug: string
+  directory: string
+  branch: string
+}
+
+export async function getLocalWorktreeInfo(repoId: number): Promise<LocalWorktreeInfo> {
+  return fetchWrapper(`${API_BASE_URL}/api/repos/${repoId}/local-worktree-info`)
+}
+
+export async function createLocalWorktree(
+  repoId: number,
+  options: { branch: string; steps?: { verifyVscode?: boolean; build?: boolean } },
+): Promise<LocalWorktreeCreateResult> {
+  return fetchWrapper(`${API_BASE_URL}/api/repos/${repoId}/local-worktrees`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options),
+  })
+}
+
+export async function getLocalWorktreeJob(repoId: number, jobId: string): Promise<LocalWorktreeJob> {
+  return fetchWrapper(`${API_BASE_URL}/api/repos/${repoId}/local-worktrees/jobs/${jobId}`)
 }
 
 export async function deleteRepo(id: number, options?: DeleteRepoOptions): Promise<DeleteRepoResult> {
-  return fetchWrapper(`${API_BASE_URL}/api/repos/${id}`, {
+  const suffix = options?.deleteFiles === undefined ? '' : `?deleteFiles=${options.deleteFiles ? 'true' : 'false'}`
+  return fetchWrapper(`${API_BASE_URL}/api/repos/${id}${suffix}`, {
     method: 'DELETE',
     ...(options
       ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(options) }
