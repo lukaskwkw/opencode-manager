@@ -3,6 +3,7 @@ import { callOpenCode } from './opencodeApi'
 import type {
   AgentInfo,
   CommandInfo,
+  FileDiffInfo,
   FormAnswer,
   FormInfo,
   ModelRef,
@@ -253,6 +254,11 @@ export async function clearRevert(sessionID: string): Promise<void> {
 
 export async function compactSession(sessionID: string): Promise<SessionInboxCompaction> {
   return callOpenCode((api) => api.session.compact({ sessionID }))
+}
+
+export async function getSessionDiff(sessionID: string, directory?: string): Promise<FileDiffInfo[]> {
+  const { data } = await callOpenCode((api) => api.session.diff({ sessionID, ...openCodeLocation(directory) }))
+  return data
 }
 
 export async function activateSkill(sessionID: string, id: string): Promise<void> {

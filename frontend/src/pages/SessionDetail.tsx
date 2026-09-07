@@ -5,7 +5,7 @@ import { getRepo } from "@/api/repos";
 import { MessageThread } from "@/components/message/MessageThread";
 import { PromptInput, type PromptInputHandle } from "@/components/message/PromptInput";
 import { FloatingTTSButton } from '@/components/message/FloatingTTSButton'
-import { X, CornerUpLeft } from "lucide-react";
+import { X, CornerUpLeft, Code2 } from "lucide-react";
 import { SquareFill } from "@/components/ui/square-fill";
 import { Header } from "@/components/ui/header";
 import { SessionList } from "@/components/session/SessionList";
@@ -56,6 +56,7 @@ import { PendingActionsGroup } from "@/components/notifications/PendingActionsGr
 import { SourceControlPanel } from "@/components/source-control";
 import { TerminalPanel } from "@/components/terminal/TerminalPanel";
 import { PreviewPanel } from "@/components/preview/PreviewPanel";
+import { SessionReviewPanel } from "@/components/session/SessionReviewPanel";
 import { SessionSendErrorBanner } from "@/components/session/SessionSendErrorBanner";
 import { BackgroundWorkBar } from "@/components/session/BackgroundWorkBar";
 import { SessionGoalBar } from "@/components/session/SessionGoalBar";
@@ -139,6 +140,7 @@ export function SessionDetail() {
   const [messagePickerMode, setMessagePickerMode] = useState<'fork' | 'timeline' | null>(null);
   const [forkPickerMessages, setForkPickerMessages] = useState<SessionMessageInfo[] | null>(null);
   const [forkPickerLoading, setForkPickerLoading] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const isMobile = useMobile();
   const { keyboardHeight } = useVisualViewport();
@@ -251,7 +253,6 @@ export function SessionDetail() {
     contentVersion: messagesContentVersion,
     onScrollStateChange: setShowScrollButton
   });
-
   const handleMessageScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     if (!hasOlder || !fetchOlder) return
     if (event.currentTarget.scrollTop > OLDER_HISTORY_SCROLL_THRESHOLD_PX) return
@@ -708,6 +709,16 @@ export function SessionDetail() {
               isConnected={isConnected}
               isReconnecting={isReconnecting}
             />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReviewOpen(true)}
+              title="Review changes"
+              aria-label="Review changes"
+              className="h-8 w-8 p-0"
+            >
+              <Code2 className="w-4 h-4" />
+            </Button>
             <SessionMoreButton />
           </Header.Actions>
         </Header>
@@ -925,6 +936,13 @@ export function SessionDetail() {
       <PreviewPanel
         isOpen={previewOpen}
         onClose={() => setPreviewOpen(false)}
+        directory={sessionDirectory}
+      />
+
+      <SessionReviewPanel
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        sessionID={sessionId}
         directory={sessionDirectory}
       />
 
