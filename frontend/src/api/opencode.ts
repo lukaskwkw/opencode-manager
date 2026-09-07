@@ -1,6 +1,21 @@
 import type { paths } from './opencode-types'
 import { fetchWrapper, fetchWrapperVoid } from './fetchWrapper'
 
+/**
+ * File change reported by GET /session/{id}/diff.
+ * The running opencode server returns { file, patch, additions, deletions, status };
+ * older servers may return full { before, after } file contents instead of a patch.
+ */
+export type SessionFileDiff = {
+  file: string
+  before?: string
+  after?: string
+  additions: number
+  deletions: number
+  status?: 'added' | 'deleted' | 'modified'
+  patch?: string
+}
+
 type SessionListResponse = paths['/session']['get']['responses']['200']['content']['application/json']
 type SessionResponse = paths['/session/{sessionID}']['get']['responses']['200']['content']['application/json']
 type SessionListParams = NonNullable<paths['/session']['get']['parameters']['query']> & {
@@ -336,6 +351,13 @@ export class OpenCodeClient {
   async getSessionStatuses() {
     return fetchWrapper<Record<string, { type: 'idle' } | { type: 'busy' } | { type: 'retry'; attempt: number; message: string; next: number }>>(`${this.baseURL}/session/status`, {
       params: this.getParams(),
+    })
+  }
+
+  async getSessionDiff(sessionID: string, directory?: string) {
+    const dir = directory ?? this.directory
+    return fetchWrapper<SessionFileDiff[]>(`${this.baseURL}/session/${sessionID}/diff`, {
+      params: dir ? { directory: dir } : undefined,
     })
   }
 

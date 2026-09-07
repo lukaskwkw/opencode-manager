@@ -29,6 +29,7 @@ interface MessageThreadProps {
   onChildSessionClick?: (sessionId: string) => void
   onUndoMessage?: (restoredPrompt: string) => void
   model?: string
+  sessionVariant?: string
 }
 
 const isMessageStreaming = (msg: Message): boolean => {
@@ -150,6 +151,7 @@ interface MessageRowProps {
   handleStartEditUserMessage: (userMessageId: string, assistantMessageId: string) => void
   handleCancelEdit: () => void
   model?: string
+  sessionVariant?: string
   simpleChatMode: boolean
   showReasoning: boolean
 }
@@ -171,6 +173,7 @@ const MessageRow = memo(function MessageRow({
   handleStartEditUserMessage,
   handleCancelEdit,
   model,
+  sessionVariant,
   simpleChatMode,
   showReasoning,
 }: MessageRowProps) {
@@ -191,6 +194,14 @@ const MessageRow = memo(function MessageRow({
   const hasContent = hasRenderableContent(msg.role, parts, simpleChatMode, showReasoning)
   const hasError = msg.role === 'assistant' && 'error' in msg && msg.error
   const standaloneSubAgentMessage = isStandaloneSubAgentMessage(msg.role, parts)
+
+  const messageLabel = msg.role === 'user' ? 'You' : (msg.role === 'assistant' && 'modelID' in msg ? msg.modelID : 'Assistant')
+  // wariant uzytego modelu: najpierw z wiadomosci (UserMessage.variant), potem fallback z sesji (sessionVariant)
+  const isModelLabel = msg.role === 'assistant' && 'modelID' in msg
+  const perMessageVariant = 'variant' in msg ? msg.variant : undefined
+  const variantSuffix = isModelLabel && (perMessageVariant || sessionVariant)
+    ? ` · ${perMessageVariant || sessionVariant}`
+    : ''
 
   if (!hasContent && !hasError) {
     return null
@@ -240,7 +251,10 @@ const MessageRow = memo(function MessageRow({
         <div className="flex items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">
-              {msg.role === 'user' ? 'You' : (msg.role === 'assistant' && 'modelID' in msg ? msg.modelID : 'Assistant')}
+              {messageLabel}
+              {variantSuffix && (
+                <span className="text-[10px] text-orange-500">{variantSuffix}</span>
+              )}
             </span>
             {msg.time && (
               <span className="text-xs text-muted-foreground">
@@ -330,7 +344,8 @@ export const MessageThread = memo(function MessageThread({
   onFileClick, 
   onChildSessionClick,
   onUndoMessage,
-  model
+  model,
+  sessionVariant
 }: MessageThreadProps) {
   const [editingUserMessageId, setEditingUserMessageId] = useState<string | null>(null)
   const [editingForAssistantId, setEditingForAssistantId] = useState<string | null>(null)
@@ -445,6 +460,7 @@ export const MessageThread = memo(function MessageThread({
           handleStartEditUserMessage={handleStartEditUserMessage}
           handleCancelEdit={handleCancelEdit}
           model={model}
+          sessionVariant={sessionVariant}
           simpleChatMode={simpleChatMode}
           showReasoning={showReasoning}
         />

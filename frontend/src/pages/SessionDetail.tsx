@@ -5,7 +5,7 @@ import { getRepo } from "@/api/repos";
 import { MessageThread } from "@/components/message/MessageThread";
 import { PromptInput, type PromptInputHandle } from "@/components/message/PromptInput";
 import { FloatingTTSButton } from '@/components/message/FloatingTTSButton'
-import { X, CornerUpLeft } from "lucide-react";
+import { X, CornerUpLeft, Code2 } from "lucide-react";
 import { Header } from "@/components/ui/header";
 import { SessionList } from "@/components/session/SessionList";
 import { getSessionListPath } from '@/lib/navigation'
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ContextUsageIndicator } from "@/components/session/ContextUsageIndicator";
 import { useSession, useAbortSession, useUpdateSession, useMessages, useCreateSession } from "@/hooks/useOpenCode";
+import { useSessionAgent } from "@/hooks/useSessionAgent";
 import { useRepoActivity } from "@/hooks/useRepoActivity";
 import { OPENCODE_API_ENDPOINT } from "@/config";
 import { useSSE } from "@/hooks/useSSE";
@@ -48,6 +49,7 @@ import { QuestionPrompt } from "@/components/session/QuestionPrompt";
 import { MinimizedQuestionIndicator } from "@/components/session/MinimizedQuestionIndicator";
 import { PendingActionsGroup } from "@/components/notifications/PendingActionsGroup";
 import { SourceControlPanel } from "@/components/source-control";
+import { SessionReviewPanel } from "@/components/session/SessionReviewPanel";
 import { SessionSendErrorBanner } from "@/components/session/SessionSendErrorBanner";
 import { SessionTodoDisplay } from "@/components/message/SessionTodoDisplay";
 import { useDialogParam } from "@/hooks/useDialogParam";
@@ -97,6 +99,7 @@ export function SessionDetail() {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [hasPromptContent, setHasPromptContent] = useState(false);
   const [minimizedQuestion, setMinimizedQuestion] = useState<QuestionRequest | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const isMobile = useMobile();
   const { keyboardHeight } = useVisualViewport();
@@ -186,6 +189,8 @@ export function SessionDetail() {
   const updateSession = useUpdateSession(opcodeUrl, sessionDirectory);
   const createSession = useCreateSession(opcodeUrl, sessionDirectory);
   const { model, modelString } = useModelSelection(opcodeUrl, sessionDirectory);
+  // sessionAgent: agent + model + variant uzyte w sesji (z ostatniej wiadomosci uzytkownika)
+  const sessionAgent = useSessionAgent(opcodeUrl, sessionId, sessionDirectory);
   const isEditingMessage = useUIState((state) => state.isEditingMessage);
   const setActivePromptFileBasePath = useUIState((state) => state.setActivePromptFileBasePath);
   const { isEnabled: ttsEnabled } = useTTS();
@@ -518,6 +523,16 @@ export function SessionDetail() {
               isConnected={isConnected}
               isReconnecting={isReconnecting}
             />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReviewOpen(true)}
+              title="Review changes"
+              aria-label="Review changes"
+              className="h-8 w-8 p-0"
+            >
+              <Code2 className="w-4 h-4" />
+            </Button>
             <SessionMoreButton />
           </Header.Actions>
         </Header>
@@ -541,6 +556,7 @@ export function SessionDetail() {
               onChildSessionClick={handleChildSessionClick}
               onUndoMessage={handleUndoMessage}
               model={modelString || undefined}
+              sessionVariant={sessionAgent.variant}
             />
           ) : null}
         </div>
@@ -676,6 +692,14 @@ export function SessionDetail() {
         onClose={() => setSourceControlOpen(false)}
         currentBranch={repo?.currentBranch || repo?.branch || "main"}
         repoName={workspaceDisplayName}
+      />
+
+      <SessionReviewPanel
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        sessionID={sessionId}
+        directory={sessionDirectory}
+        opcodeUrl={opcodeUrl}
       />
 
       <ResetPermissionsDialog
