@@ -566,7 +566,12 @@ const MessageRow = memo(function MessageRow({
               <span aria-hidden="true">·</span>
             </>
           )}
-          <span className="text-foreground">{message.model.id}</span>
+          <span className="text-foreground">
+            {message.model.id}
+            {message.model.variant && (
+              <span className="text-[10px] text-orange-500"> · {message.model.variant}</span>
+            )}
+          </span>
           {message.time.completed !== undefined ? (
             <>
               <span aria-hidden="true">·</span>

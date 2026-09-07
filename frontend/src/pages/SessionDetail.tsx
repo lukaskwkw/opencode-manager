@@ -5,7 +5,7 @@ import { repoQueryOptions } from "@/lib/repoQuery";
 import { MessageThread } from "@/components/message/MessageThread";
 import { PromptInput, type PromptInputHandle } from "@/components/message/PromptInput";
 import { FloatingTTSButton } from '@/components/message/FloatingTTSButton'
-import { X, CornerUpLeft, GitBranch, ArrowDown, Server } from "lucide-react";
+import { X, CornerUpLeft, GitBranch, ArrowDown, Server, Code2 } from "lucide-react";
 import { SquareFill } from "@/components/ui/square-fill";
 import { Header } from "@/components/ui/header";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +69,7 @@ import { PendingActionsGroup } from "@/components/notifications/PendingActionsGr
 import { SourceControlPanel, RemoteSourceControlPanel } from "@/components/source-control";
 import { TerminalPanel } from "@/components/terminal/TerminalPanel";
 import { PreviewPanel } from "@/components/preview/PreviewPanel";
+import { SessionReviewPanel } from "@/components/session/SessionReviewPanel";
 import { SessionSendErrorBanner } from "@/components/session/SessionSendErrorBanner";
 import { ReconnectingBanner } from "@/components/session/ReconnectingBanner";
 import { SessionDetailsSheet } from "@/components/session/SessionDetailsSheet";
@@ -156,6 +157,7 @@ export function SessionDetail() {
   const [messagePickerMode, setMessagePickerMode] = useState<'fork' | 'timeline' | null>(null);
   const [forkPickerMessages, setForkPickerMessages] = useState<SessionMessageInfo[] | null>(null);
   const [forkPickerLoading, setForkPickerLoading] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const isMobile = useMobile();
   const { open: openMobileSheet } = useMobileTabBar();
@@ -317,7 +319,6 @@ export function SessionDetail() {
     isContentReady: !isTranscriptLoading,
     onScrollStateChange: setShowScrollButton
   });
-
   const handleMessageScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     if (!hasOlder || !fetchOlder) return
     if (event.currentTarget.scrollTop > OLDER_HISTORY_SCROLL_THRESHOLD_PX) return
@@ -864,6 +865,18 @@ export function SessionDetail() {
               )}
               <PendingActionsGroup showScheduleReports={!isRemoteServer} />
             </div>
+            {!isRemoteServer && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReviewOpen(true)}
+                title="Review changes"
+                aria-label="Review changes"
+                className="h-8 w-8 p-0"
+              >
+                <Code2 className="w-4 h-4" />
+              </Button>
+            )}
             <SessionMoreButton />
           </Header.Actions>
         </Header>
@@ -1151,11 +1164,20 @@ export function SessionDetail() {
       )}
 
       {!isRemoteServer && (
-        <ResetPermissionsDialog
-          open={resetPermissionsOpen}
-          onOpenChange={setResetPermissionsOpen}
-          repoId={repoId}
-        />
+        <>
+          <SessionReviewPanel
+            open={reviewOpen}
+            onOpenChange={setReviewOpen}
+            sessionID={sessionId}
+            directory={sessionDirectory}
+          />
+
+          <ResetPermissionsDialog
+            open={resetPermissionsOpen}
+            onOpenChange={setResetPermissionsOpen}
+            repoId={repoId}
+          />
+        </>
       )}
     </div>
   );
