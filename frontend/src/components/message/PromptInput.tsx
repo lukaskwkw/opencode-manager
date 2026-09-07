@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, useImperativeHandle, forwardRef, 
 import { useSendPrompt, useInterruptSession, useSendShell, useAgents, useSkills } from '@/hooks/useOpenCode'
 import { useCommands } from '@/hooks/useCommands'
 import { useCommandHandler } from '@/hooks/useCommandHandler'
+import { useComposerDraft } from '@/hooks/useComposerDraft'
 import { useFileSearch } from '@/hooks/useFileSearch'
 import { useModelSelection } from '@/hooks/useModelSelection'
 import { useVariants } from '@/hooks/useVariants'
@@ -279,6 +280,7 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
   const skillIds = useMemo(() => skills.map((skill) => skill.id), [skills])
   const failedPrompt = useSendErrorStore((state) => state.errors[sessionID]?.failedPrompt)
   const restoredFailedPromptRef = useRef<string | null>(null)
+  const draft = useComposerDraft(sessionID)
 
   useEffect(() => {
     if (failedPrompt) {
@@ -297,6 +299,49 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
     }
   }, [failedPrompt])
   
+  // Przywracanie szkicu (draft) z localStorage dla danej sesji. failedPrompt ma
+  // pierwszenstwo - wtedy szkicu nie nadpisujemy, zostaje w storage do wysylki.
+  useEffect(() => {
+    if (failedPrompt) {
+      return
+    }
+    const saved = draft.load()
+    if (!saved) {
+      return
+    }
+    setPrompt(saved.text || '')
+    setImageAttachments(saved.attachments?.filter((attachment) => attachment.dataUrl) ?? [])
+    if (saved.files) {
+      setAttachedFiles(new Map<string, FileAttachmentInfo>(saved.files.map((file) => [file.name.toLowerCase(), file])))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Celowo tylko na zmianie sessionID (mount); failedPrompt obsluguje efekt powyzej
+  }, [sessionID])
+
+  const autosaveSessionRef = useRef<string | undefined>(undefined)
+
+  // Autosave szkicu z debounce 400ms. Pierwsze uruchomienie dla danego
+  // sessionID pomijamy, zeby nie wyczyscic szkicu zanim efekt INIT go zaladuje.
+  useEffect(() => {
+    if (autosaveSessionRef.current !== sessionID) {
+      autosaveSessionRef.current = sessionID
+      return
+    }
+    const hasContent = prompt.trim() !== '' || imageAttachments.length > 0 || attachedFiles.size > 0
+    if (!hasContent) {
+      draft.clear()
+      return
+    }
+    const timer = setTimeout(() => {
+      draft.save({
+        text: prompt,
+        attachments: imageAttachments,
+        files: Array.from(attachedFiles.values()).map(({ path, name }) => ({ path, name })),
+        updatedAt: Date.now(),
+      })
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [attachedFiles, draft, imageAttachments, prompt, sessionID])
+
   const mentionSuggestions = useMemo((): PromptSuggestion<MentionItem>[] => {
     const agentMatches = rankByMatch(agents, mentionQuery, {
       getName: (agent) => agent.name,
@@ -408,7 +453,10 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
           delivery: 'queue',
         },
         {
-          onSuccess: () => clearSubmittedPrompt(submittedPrompt, submittedAttachedFiles, submittedImageAttachments)
+          onSuccess: () => {
+            draft.clear()
+            clearSubmittedPrompt(submittedPrompt, submittedAttachedFiles, submittedImageAttachments)
+          }
         }
       )
       setStoredAgent(sessionID, currentMode)
@@ -428,6 +476,7 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
         },
         {
           onSuccess: () => {
+            draft.clear()
             if (promptRef.current !== submittedPrompt) return
             setPrompt('')
             setIsBashMode(false)
@@ -465,6 +514,7 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
             showToast.info('Built-in commands do not use attachments; they were kept')
             return
           }
+          draft.clear()
           clearSubmittedPrompt(submittedPrompt, submittedAttachedFiles, submittedImageAttachments)
         })
         return
@@ -500,6 +550,7 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
       {
         onSuccess: () => {
           pendingConfirmClearRef.current = null
+          draft.clear()
           clearSubmittedPrompt(submittedPrompt, submittedAttachedFiles, submittedImageAttachments)
         },
         onError: () => {
