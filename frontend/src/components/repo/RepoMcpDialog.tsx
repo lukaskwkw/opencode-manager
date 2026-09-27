@@ -9,6 +9,8 @@ import { invalidateSessionCaches } from '@/lib/queryInvalidation'
 import { showToast } from '@/lib/toast'
 import { formatMcpServerName } from '@/lib/mcp'
 
+const MCP_STATUS_RETRY_INTERVAL_MS = 2500
+
 interface RepoMcpDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -25,15 +27,15 @@ export function RepoMcpDialog({ open, onOpenChange, directory }: RepoMcpDialogPr
 
   const serverIds = Object.keys(localStatus)
 
-  const fetchStatus = useCallback(async () => {
+  const fetchStatus = useCallback(async (options?: { background?: boolean }) => {
     if (!directory) return
 
-    setIsLoadingStatus(true)
+    if (!options?.background) setIsLoadingStatus(true)
     try {
       setLocalStatus(await mcpApi.getStatus(directory))
       setHasFetchedStatus(true)
     } finally {
-      setIsLoadingStatus(false)
+      if (!options?.background) setIsLoadingStatus(false)
     }
   }, [directory])
 
@@ -98,6 +100,14 @@ export function RepoMcpDialog({ open, onOpenChange, directory }: RepoMcpDialogPr
       fetchStatus()
     }
   }, [open, directory, fetchStatus])
+
+  useEffect(() => {
+    if (!open || !directory || !hasFetchedStatus || serverIds.length > 0) return
+    const timer = setInterval(() => {
+      void fetchStatus({ background: true })
+    }, MCP_STATUS_RETRY_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [open, directory, hasFetchedStatus, serverIds.length, fetchStatus])
 
   if (!directory) return null
 
