@@ -257,8 +257,7 @@ export async function compactSession(sessionID: string): Promise<SessionInboxCom
 }
 
 export async function getSessionDiff(sessionID: string, directory?: string): Promise<FileDiffInfo[]> {
-  const { data } = await callOpenCode((api) => api.session.diff({ sessionID, ...openCodeLocation(directory) }))
-  return data
+  return callOpenCode((api) => api.session.diff({ sessionID, ...openCodeLocation(directory) }))
 }
 
 export async function activateSkill(sessionID: string, id: string): Promise<void> {
