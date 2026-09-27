@@ -17,6 +17,8 @@ import type {
 } from '@opencode-manager/shared/opencode'
 import type { SessionSnapshot } from '@/lib/session-projection'
 
+const PROMPT_ADMIT_TIMEOUT_MS = 60_000
+
 type SessionPromptInput = Parameters<OpenCodeApi['session']['prompt']>[0]
 
 export type PromptFileInput = NonNullable<SessionPromptInput['files']>[number]
@@ -173,10 +175,13 @@ export async function switchSessionAgent(sessionID: string, agent: string): Prom
 
 export async function sendPrompt(input: SendPromptInput): Promise<SessionInboxUser> {
   return callOpenCode((api) =>
-    api.session.prompt({
-      sessionID: input.sessionID,
-      ...buildPromptFields(input),
-    }),
+    api.session.prompt(
+      {
+        sessionID: input.sessionID,
+        ...buildPromptFields(input),
+      },
+      { signal: AbortSignal.timeout(PROMPT_ADMIT_TIMEOUT_MS) },
+    ),
   )
 }
 
