@@ -230,6 +230,18 @@ export async function listProjects(serverId?: string): Promise<OpenCodeProject[]
   return callOpenCode((api) => api.project.list(), serverId)
 }
 
+export async function listChildSessions(
+  parentID: string,
+  directory?: string,
+  serverId?: string,
+): Promise<SessionInfo[]> {
+  const { data } = await callOpenCode(
+    (api) => api.session.list({ parentID, limit: 100, ...openCodeLocation(directory) }),
+    serverId,
+  )
+  return data
+}
+
 export async function getSession(sessionID: string, serverId?: string): Promise<SessionInfo> {
   return callOpenCode((api) => api.session.get({ sessionID }), serverId)
 }
