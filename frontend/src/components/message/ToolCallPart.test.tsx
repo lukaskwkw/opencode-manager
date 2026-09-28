@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
-import type { PermissionRequest, SessionMessageAssistantTool } from '@opencode-manager/shared/opencode'
+import type { PermissionRequest, SessionInfo, SessionMessageAssistantTool } from '@opencode-manager/shared/opencode'
+import { SubagentSessionsProvider } from '@/contexts/SubagentSessionsContext'
 import { ToolCallPart } from './ToolCallPart'
 import { useUserBash } from '@/stores/userBashStore'
 import { useSessionStatus } from '@/stores/sessionStatusStore'
@@ -263,5 +264,105 @@ describe('ToolCallPart background indicator', () => {
 
     await waitFor(() => expect(screen.getByText('✓')).toBeInTheDocument())
     expect(screen.queryByText('background')).not.toBeInTheDocument()
+  })
+})
+
+describe('ToolCallPart subagent session link', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.useSettings.mockReturnValue({
+      preferences: { expandToolCalls: false },
+      isLoading: false,
+      updateSettings: vi.fn(),
+      isUpdating: false,
+    })
+    mocks.useToolCallPermission.mockReturnValue(null)
+  })
+
+  const childSession = (id: string, title: string, agent: string): SessionInfo => ({
+    id,
+    projectID: 'project_1',
+    agent,
+    cost: 0,
+    tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+    time: { created: 1, updated: 2 },
+    title,
+    location: { directory: '/workspace/repo' },
+  })
+
+  const runningSubagent = (): SessionMessageAssistantTool => ({
+    type: 'tool',
+    id: 'call_subagent',
+    name: 'subagent',
+    time: { created: 1, ran: 2 },
+    state: { status: 'running', input: { description: 'Explore codebase', agent: 'explore' }, metadata: {} },
+  })
+
+  const completedSubagent = (sessionID: string): SessionMessageAssistantTool => ({
+    type: 'tool',
+    id: 'call_subagent',
+    name: 'subagent',
+    time: { created: 1, ran: 2, completed: 3 },
+    state: {
+      status: 'completed',
+      input: { description: 'Explore codebase', agent: 'explore' },
+      content: [{ type: 'text', text: 'done' }],
+      metadata: { sessionID },
+    },
+  })
+
+  it('links a running subagent row to the child session resolved by title', () => {
+    const onChildSessionClick = vi.fn()
+
+    renderWithProviders(
+      <SubagentSessionsProvider value={[childSession('child_1', 'Explore codebase', 'explore')]}>
+        <ToolCallPart part={runningSubagent()} messageID="msg_1" onChildSessionClick={onChildSessionClick} />
+      </SubagentSessionsProvider>,
+    )
+
+    fireEvent.click(screen.getByTitle('View subagent session'))
+
+    expect(onChildSessionClick).toHaveBeenCalledWith('child_1')
+  })
+
+  it('renders no session link when no child title matches', () => {
+    renderWithProviders(
+      <SubagentSessionsProvider value={[childSession('child_2', 'Something else', 'explore')]}>
+        <ToolCallPart part={runningSubagent()} messageID="msg_1" />
+      </SubagentSessionsProvider>,
+    )
+
+    expect(screen.queryByTitle('View subagent session')).not.toBeInTheDocument()
+  })
+
+  it('renders no session link without a subagent sessions provider', () => {
+    renderWithProviders(<ToolCallPart part={runningSubagent()} messageID="msg_1" />)
+
+    expect(screen.queryByTitle('View subagent session')).not.toBeInTheDocument()
+  })
+
+  it('keeps the metadata session id when a title match also exists', () => {
+    const onChildSessionClick = vi.fn()
+
+    renderWithProviders(
+      <SubagentSessionsProvider value={[childSession('child_1', 'Explore codebase', 'explore')]}>
+        <ToolCallPart part={completedSubagent('metadata_child')} messageID="msg_1" onChildSessionClick={onChildSessionClick} />
+      </SubagentSessionsProvider>,
+    )
+
+    fireEvent.click(screen.getByTitle('View subagent session'))
+
+    expect(onChildSessionClick).toHaveBeenCalledWith('metadata_child')
+  })
+
+  it('keeps a running subagent in the running state while its child status is unknown', () => {
+    renderWithProviders(
+      <SubagentSessionsProvider value={[childSession('child_1', 'Explore codebase', 'explore')]}>
+        <ToolCallPart part={runningSubagent()} messageID="msg_1" />
+      </SubagentSessionsProvider>,
+    )
+
+    expect(screen.getByTitle('View subagent session')).toBeInTheDocument()
+    expect(screen.queryByText('✓')).not.toBeInTheDocument()
   })
 })

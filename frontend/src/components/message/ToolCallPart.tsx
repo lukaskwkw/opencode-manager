@@ -7,6 +7,7 @@ import { useChildLifecycleForSession } from '@/stores/sessionStatusStore'
 import { useToolCallPermission } from '@/contexts/EventContext'
 import { useChildSessionReconciliation } from '@/hooks/useOpenCode'
 import { useShell } from '@/hooks/useSessionShells'
+import { useSubagentSessions, childSessionIdFromTitle } from '@/contexts/SubagentSessionsContext'
 import { detectFileReferences } from '@/lib/fileReferences'
 import { ExternalLink, Loader2, Shield } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -117,12 +118,14 @@ export const ToolCallPart = memo(function ToolCallPart({ part, messageID, direct
   const { preferences } = useSettings()
   const { userBashCommands } = useUserBash()
   const isSubagent = part.name === 'subagent'
-  const subagentSessionId = isSubagent ? subagentSessionID(part) : undefined
+  const childSessions = useSubagentSessions()
+  const metadataSessionId = isSubagent ? subagentSessionID(part) : undefined
+  const subagentSessionId = metadataSessionId ?? (isSubagent ? childSessionIdFromTitle(part, childSessions) : undefined)
   const backgroundSubagent = isSubagent ? backgroundChildSessionID(part) : undefined
-  const subagentSessionLifecycle = useChildLifecycleForSession(subagentSessionId)
+  const subagentSessionLifecycle = useChildLifecycleForSession(metadataSessionId)
   useChildSessionReconciliation(
-    subagentSessionId && (backgroundSubagent !== undefined || part.state.status === 'running')
-      ? subagentSessionId
+    metadataSessionId && (backgroundSubagent !== undefined || part.state.status === 'running')
+      ? metadataSessionId
       : undefined,
   )
   const subagentStatus = subagentLifecycle(
