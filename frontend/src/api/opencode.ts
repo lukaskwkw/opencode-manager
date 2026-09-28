@@ -120,6 +120,13 @@ export async function getOpenCodeLocation(directory: string): Promise<OpenCodeLo
   return callOpenCode((api) => api.location.get(openCodeLocation(directory)))
 }
 
+export async function listChildSessions(parentID: string, directory?: string): Promise<SessionInfo[]> {
+  const { data } = await callOpenCode((api) =>
+    api.session.list({ parentID, limit: 100, ...openCodeLocation(directory) }),
+  )
+  return data
+}
+
 export async function getSession(sessionID: string): Promise<SessionInfo> {
   return callOpenCode((api) => api.session.get({ sessionID }))
 }
