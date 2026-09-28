@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { ContextUsageIndicator } from "@/components/session/ContextUsageIndicator";
 import { useSession, useInterruptSession, useUpdateSession, useCreateSession } from "@/hooks/useOpenCode";
 import { useSessionTranscript } from "@/hooks/useSessionTranscript";
-import { useChildSessions } from "@/hooks/useChildSessions";
+import { needsChildSessions, useChildSessions } from "@/hooks/useChildSessions";
 import { useRepoActivity } from "@/hooks/useRepoActivity";
 import { useSSE } from "@/hooks/useSSE";
 import { useUIState } from "@/stores/uiStateStore";
@@ -286,7 +286,8 @@ export function SessionDetail() {
     if (lastAssistantMessage && lastAssistantMessage.time.completed === undefined) return true
     return false
   }, [lastAssistantMessage, transcriptStatus])
-  const childSessions = useChildSessions(sessionId, sessionDirectory, isSessionActive)
+  const needsSubagentSessions = useMemo(() => needsChildSessions(messages, isSessionActive), [messages, isSessionActive])
+  const childSessions = useChildSessions(sessionId, sessionDirectory, needsSubagentSessions)
   const hasIncompleteMessages = lastAssistantMessage ? lastAssistantMessage.time.completed === undefined : false;
   const isStreamingResponse = hasIncompleteMessages && isSessionActive;
   const workspaceBasePath = repo?.localPath;
