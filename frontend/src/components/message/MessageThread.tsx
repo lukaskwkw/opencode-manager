@@ -669,6 +669,7 @@ export const MessageThread = memo(function MessageThread({
   const groupToolCalls = preferences?.groupToolCalls ?? true
 
   const lastUserMessageId = useMemo(() => findLastUserMessageId(messages), [messages])
+  const messageIDs = useMemo(() => new Set(messages.map((message) => message.id)), [messages])
 
   const shellOutcomesKey = useMemo(
     () => [...collectBackgroundParts(messages).shellNotices].map(([id, outcome]) => `${id}=${outcome}`).join(','),
@@ -736,7 +737,7 @@ export const MessageThread = memo(function MessageThread({
         />
       ))}
       {pending.map((item) => (
-        item.type === 'user'
+        item.type === 'user' && !messageIDs.has(item.id)
           ? <QueuedPromptRow key={item.id} item={item} />
           : null
       ))}

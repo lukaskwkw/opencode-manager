@@ -253,14 +253,14 @@ describe('PromptInput goal mode', () => {
     expect(mocks.startGoal).not.toHaveBeenCalled()
   })
 
-  it('starts an armed goal before queueing when the session is busy', async () => {
+  it('starts an armed goal before steering when the session is busy', async () => {
     stubMatchMedia(true)
     renderComponent({ isStreamingResponse: true })
 
     const input = await screen.findByPlaceholderText('Send a message...')
     fireEvent.change(input, { target: { value: 'Ship the feature' } })
     fireEvent.click(screen.getByRole('button', { name: GOAL_BUTTON }))
-    fireEvent.click(screen.getByTitle('Queue message'))
+    fireEvent.click(screen.getByTitle('Steer'))
 
     await waitFor(() => expect(mocks.startGoal).toHaveBeenCalledWith({
       sessionId: 'test-session',
@@ -268,8 +268,11 @@ describe('PromptInput goal mode', () => {
       objective: 'Ship the feature',
     }))
     await waitFor(() => expect(mocks.sendPrompt).toHaveBeenCalledWith(
-      expect.objectContaining({ delivery: 'queue' }),
+      expect.objectContaining({ text: 'Ship the feature' }),
+      expect.anything(),
     ))
+    const payload = mocks.sendPrompt.mock.calls[0]?.[0] as { delivery?: string }
+    expect(payload.delivery).toBeUndefined()
     expect(mocks.startGoal.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendPrompt.mock.invocationCallOrder[0])
   })
 
@@ -286,11 +289,11 @@ describe('PromptInput goal mode', () => {
     const input = await screen.findByPlaceholderText('Send a message...')
     fireEvent.change(input, { target: { value: 'Ship the feature' } })
     fireEvent.click(screen.getByRole('button', { name: GOAL_BUTTON }))
-    fireEvent.click(screen.getByTitle('Queue message'))
+    fireEvent.click(screen.getByTitle('Steer'))
 
     await waitFor(() => expect(mocks.startGoal).toHaveBeenCalledTimes(1))
 
-    fireEvent.click(screen.getByTitle('Queue message'))
+    fireEvent.click(screen.getByTitle('Steer'))
 
     expect(mocks.startGoal).toHaveBeenCalledTimes(1)
     expect(mocks.sendPrompt).not.toHaveBeenCalled()
@@ -312,7 +315,7 @@ describe('PromptInput goal mode', () => {
     const input = await screen.findByPlaceholderText('Send a message...')
     fireEvent.change(input, { target: { value: '/review the diff' } })
     fireEvent.click(screen.getByRole('button', { name: GOAL_BUTTON }))
-    fireEvent.click(screen.getByTitle('Queue message'))
+    fireEvent.click(screen.getByTitle('Steer'))
 
     await waitFor(() => expect(mocks.sendPrompt).toHaveBeenCalled())
     expect(mocks.startGoal).not.toHaveBeenCalled()

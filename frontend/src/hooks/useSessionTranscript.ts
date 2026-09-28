@@ -24,6 +24,7 @@ interface NewestPageRead {
 }
 
 const TRANSCRIPT_FALLBACK_POLL_INTERVAL_MS = 5000
+const TRANSCRIPT_RECONCILE_INTERVAL_MS = 60_000
 
 export function useSessionTranscript(sessionID: string, directory: string) {
   const serverId = useOpenCodeServerId()
@@ -95,7 +96,7 @@ export function useSessionTranscript(sessionID: string, directory: string) {
     enabled: Boolean(sessionID && directory),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
-    refetchInterval: isStreamHealthy ? false : TRANSCRIPT_FALLBACK_POLL_INTERVAL_MS,
+    refetchInterval: isStreamHealthy ? TRANSCRIPT_RECONCILE_INTERVAL_MS : TRANSCRIPT_FALLBACK_POLL_INTERVAL_MS,
     retry: (failureCount, error) =>
       !(error instanceof FetchError && (error.statusCode === 400 || error.statusCode === 404))
       && failureCount < 3,

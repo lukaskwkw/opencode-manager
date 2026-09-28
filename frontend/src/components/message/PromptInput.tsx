@@ -404,7 +404,6 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
           skills: parsed.skills,
           model: modelRef ?? undefined,
           agent: currentMode,
-          delivery: 'queue',
         }),
         () => completeSubmittedDraft(submitted),
       )
@@ -1293,9 +1292,9 @@ return (
                 ? 'bg-highlight hover:bg-highlight/90 border-highlight text-highlight-foreground ring-highlight/20'
                 : 'bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-primary-foreground border-border/30'
             }`}
-            title={hasPendingPermissionForSession ? 'View pending permission' : (isStreamingResponse ? 'Queue message' : 'Send')}
+            title={hasPendingPermissionForSession ? 'View pending permission' : (isStreamingResponse ? 'Steer' : 'Send')}
           >
-            <span className="whitespace-nowrap">{hasPendingPermissionForSession ? 'View' : (isStreamingResponse ? 'Queue' : 'Send')}</span>
+            <span className="whitespace-nowrap">{hasPendingPermissionForSession ? 'View' : (isStreamingResponse ? 'Steer' : 'Send')}</span>
           </button>
         )}
       </div>
