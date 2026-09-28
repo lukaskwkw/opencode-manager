@@ -19,6 +19,7 @@ interface NewestPageRead {
 }
 
 const TRANSCRIPT_FALLBACK_POLL_INTERVAL_MS = 5000
+const TRANSCRIPT_RECONCILE_INTERVAL_MS = 60_000
 
 export function useSessionTranscript(sessionID: string, directory: string) {
   const queryClient = useQueryClient()
@@ -83,7 +84,7 @@ export function useSessionTranscript(sessionID: string, directory: string) {
     enabled: Boolean(sessionID && directory),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
-    refetchInterval: isStreamConnected ? false : TRANSCRIPT_FALLBACK_POLL_INTERVAL_MS,
+    refetchInterval: isStreamConnected ? TRANSCRIPT_RECONCILE_INTERVAL_MS : TRANSCRIPT_FALLBACK_POLL_INTERVAL_MS,
   })
 
   const fetchOlder = useCallback(async () => {

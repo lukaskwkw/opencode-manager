@@ -5,8 +5,8 @@ import { createElement } from 'react'
 import { useSendPrompt } from './useOpenCode'
 import { FetchError } from '../api/fetchWrapper'
 import { sessionTranscriptQueryKey } from '../lib/queryInvalidation'
-import { emptySessionTranscript } from '../lib/session-projection'
-import type { SessionInboxUser } from '@opencode-manager/shared/opencode'
+import { emptySessionTranscript, type SessionTranscript } from '../lib/session-projection'
+import type { SessionInboxUser, SessionMessageUser } from '@opencode-manager/shared/opencode'
 
 const mocks = vi.hoisted(() => ({
   sendPrompt: vi.fn(),
@@ -317,6 +317,34 @@ describe('useSendPrompt', () => {
     }>(sessionTranscriptQueryKey('test-session'))
 
     expect(cached?.transcript.pending.map((item) => item.id)).toEqual(['inbox_queued prompt'])
+  })
+
+  it('does not add a pending row when the delivered message already exists in the transcript', async () => {
+    mocks.sendPrompt.mockResolvedValue(inboxItem('test-session', 'delivered prompt'))
+    const delivered: SessionMessageUser = {
+      id: 'inbox_delivered prompt',
+      type: 'user',
+      text: 'delivered prompt',
+      time: { created: 1000 },
+    }
+    const transcript: SessionTranscript = { ...emptySessionTranscript, messages: [delivered] }
+    queryClient.setQueryData(sessionTranscriptQueryKey('test-session'), { transcript })
+
+    const { result } = renderHookWithProviders()
+
+    await result.current.mutateAsync({
+      sessionID: 'test-session',
+      text: 'delivered prompt',
+      delivery: 'queue',
+    })
+
+    const cached = queryClient.getQueryData<{ transcript: SessionTranscript }>(
+      sessionTranscriptQueryKey('test-session'),
+    )
+
+    expect(cached?.transcript).toBe(transcript)
+    expect(cached?.transcript.pending).toEqual([])
+    expect(cached?.transcript.messages.map((message) => message.id)).toEqual([delivered.id])
   })
 
   it('clears the stored send error on success', async () => {
