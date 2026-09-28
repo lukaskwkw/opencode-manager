@@ -147,12 +147,11 @@ function removePendingItem(draft: TranscriptDraft, inboxID: string): void {
 }
 
 function admitInboxItemToDraft(draft: TranscriptDraft, item: SessionInboxInfo): void {
+  if (hasMessage(draft.messages, item.id)) return
   const pending = writablePending(draft)
   const index = findLastIndex(pending, (entry) => entry.id === item.id)
   if (index < 0) pending.push(item)
   else pending[index] = item
-  const materialized = materializeInboxMessage(item)
-  if (materialized) upsertMessage(draft, materialized)
 }
 
 function retractInboxItemFromDraft(draft: TranscriptDraft, inboxID: string): void {
@@ -470,15 +469,16 @@ function applyEventToDraft(draft: TranscriptDraft, event: V2Event): void {
       })
       return
     case 'session.inbox.delivered': {
-      const wasPending =
-        findLastIndex(draft.pending, (item) => item.id === event.data.inboxID) >= 0
+      const pendingIndex = findLastIndex(draft.pending, (item) => item.id === event.data.inboxID)
+      const item = pendingIndex >= 0 ? draft.pending[pendingIndex] : undefined
       removePendingItem(draft, event.data.inboxID)
-      const index = findMessageIndex(draft.messages, event.data.inboxID)
-      const message = draft.messages[index]
-      if (index < 0 || !wasPending || message === undefined) return
-      const messages = writableMessages(draft)
-      messages.splice(index, 1)
-      messages.push({ ...message, time: { ...message.time, created: event.created } })
+      const materialized = item
+        ? materializeInboxMessage({ ...item, time: { created: event.created } })
+        : undefined
+      if (materialized === undefined) return
+      const existing = findMessageIndex(draft.messages, materialized.id)
+      if (existing >= 0) writableMessages(draft).splice(existing, 1)
+      upsertMessage(draft, materialized)
       return
     }
     case 'session.inbox.cancelled':

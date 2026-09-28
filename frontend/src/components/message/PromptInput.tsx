@@ -383,7 +383,6 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
           skills: parsed.skills,
           model: modelRef ?? undefined,
           agent: currentMode,
-          delivery: 'queue',
         },
         {
           onSuccess: () => {

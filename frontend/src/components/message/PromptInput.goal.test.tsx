@@ -263,9 +263,11 @@ describe('PromptInput goal mode', () => {
       objective: 'Ship the feature',
     }))
     await waitFor(() => expect(mocks.sendPrompt).toHaveBeenCalledWith(
-      expect.objectContaining({ delivery: 'queue' }),
+      expect.objectContaining({ text: 'Ship the feature' }),
       expect.anything(),
     ))
+    const payload = mocks.sendPrompt.mock.calls[0]?.[0] as { delivery?: string }
+    expect(payload.delivery).toBeUndefined()
     expect(mocks.startGoal.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendPrompt.mock.invocationCallOrder[0])
   })
 
