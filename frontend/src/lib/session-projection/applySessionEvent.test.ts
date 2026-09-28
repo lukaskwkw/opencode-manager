@@ -84,13 +84,11 @@ describe('applySessionEvent', () => {
     expect(transcript.pending).toEqual([])
   })
 
-  it('materializes an enqueued prompt and clears it from pending on delivery', () => {
+  it('keeps an enqueued prompt pending until delivery materializes it once', () => {
     const enqueued = applySessionEvent(emptySessionTranscript, promptSequence[0])
 
     expect(enqueued.pending).toHaveLength(1)
-    expect(enqueued.messages).toMatchObject([
-      { id: USER_INBOX_ID, type: 'user', text: 'Run the tests', time: { created: 1000 } },
-    ])
+    expect(enqueued.messages).toEqual([])
 
     const delivered = applySessionEvent(enqueued, promptSequence[1])
 
@@ -98,6 +96,31 @@ describe('applySessionEvent', () => {
     expect(delivered.messages).toMatchObject([
       { id: USER_INBOX_ID, type: 'user', text: 'Run the tests', time: { created: 1010 } },
     ])
+  })
+
+  it('does not duplicate a delivered prompt already present in the snapshot', () => {
+    const enqueued = applySessionEvent(emptySessionTranscript, promptSequence[0])
+    const snapshot: SessionTranscript = {
+      ...enqueued,
+      messages: [{ id: USER_INBOX_ID, type: 'user', text: 'Run the tests', time: { created: 999 } }],
+    }
+
+    const delivered = applySessionEvent(snapshot, promptSequence[1])
+
+    expect(delivered.pending).toEqual([])
+    expect(delivered.messages).toEqual([
+      { id: USER_INBOX_ID, type: 'user', text: 'Run the tests', time: { created: 1010 } },
+    ])
+  })
+
+  it('ignores a replayed enqueue for an already-delivered prompt', () => {
+    const delivered = applyAll(promptSequence.slice(0, 2))
+
+    const replayed = applySessionEvent(delivered, promptSequence[0] as V2Event)
+
+    expect(replayed).toBe(delivered)
+    expect(replayed.pending).toEqual([])
+    expect(replayed.messages).toHaveLength(1)
   })
 
   it('updates the delivery mode of a pending prompt', () => {
@@ -737,12 +760,6 @@ describe('hydrateSessionTranscript', () => {
     expect(transcript.pending).toEqual([pending])
     expect(transcript.messages).toMatchObject([
       { id: USER_INBOX_ID, type: 'user', text: 'Run the tests', time: { created: 1000 } },
-      {
-        id: messageID(200),
-        type: 'user',
-        text: 'Wait for me',
-        time: { created: 20000 },
-      },
     ])
   })
 

@@ -231,8 +231,8 @@ describe('useSessionTranscript', () => {
     expect(result.current.messages).toMatchObject([
       { id: USER_INBOX_ID, type: 'user' },
       { id: ASSISTANT_MESSAGE_ID, type: 'assistant' },
-      { id: queuedPrompt.id, type: 'user', text: 'Wait for me' },
     ])
+    expect(result.current.messages.some((message) => message.id === queuedPrompt.id)).toBe(false)
   })
 
   it('removes stale pending prompts and busy status after missed delivery and cancellation', async () => {
@@ -289,7 +289,7 @@ describe('useSessionTranscript', () => {
       delivered,
     ])
     expect(result.current.messages.some((message) => message.id === cancelledPrompt.id)).toBe(false)
-    expect(result.current.messages.some((message) => message.id === waitingPrompt.id)).toBe(true)
+    expect(result.current.messages.some((message) => message.id === waitingPrompt.id)).toBe(false)
   })
 
   it('applies events buffered during the initial load onto the snapshot with a single read', async () => {
@@ -411,7 +411,7 @@ describe('useSessionTranscript', () => {
     focusManager.setFocused(undefined)
   })
 
-  it('polls the newest page every 5s while the event stream is disconnected and stops once connected', async () => {
+  it('polls the newest page every 5s while the event stream is disconnected and stops the fast polling once connected', async () => {
     vi.useFakeTimers()
     try {
       const queryClient = createQueryClient()
@@ -442,6 +442,36 @@ describe('useSessionTranscript', () => {
         await vi.advanceTimersByTimeAsync(15000)
       })
       expect(mocks.readSessionSnapshot).toHaveBeenCalledTimes(readsAfterConnect)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('reconciles the newest page every 60s while the event stream stays connected', async () => {
+    vi.useFakeTimers()
+    try {
+      const queryClient = createQueryClient()
+      const { result } = renderHook(() => useSessionTranscript(SESSION_ID, DIRECTORY), {
+        wrapper: createWrapper(queryClient),
+      })
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+      expect(result.current.messages).toHaveLength(2)
+
+      act(() => {
+        testTransport().connected()
+      })
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+      const readsAfterConnect = mocks.readSessionSnapshot.mock.calls.length
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60000)
+      })
+      expect(mocks.readSessionSnapshot).toHaveBeenCalledTimes(readsAfterConnect + 1)
     } finally {
       vi.useRealTimers()
     }

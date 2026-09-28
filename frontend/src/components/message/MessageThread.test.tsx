@@ -460,6 +460,33 @@ describe('MessageThread', () => {
     expect(screen.getByText('QUEUED')).toBeInTheDocument()
   })
 
+  it('does not render a queued prompt row for a pending item already materialized as a message', () => {
+    setupSettings({ simpleChatMode: false, showReasoning: false })
+
+    const pending: SessionInboxUser[] = [
+      {
+        id: 'inbox_1',
+        sessionID: 'test-session',
+        type: 'user',
+        payload: { text: 'Delivered already' },
+        delivery: 'steer',
+        time: { created: Date.now() },
+      },
+    ]
+
+    render(
+      <MessageThread
+        sessionID="test-session"
+        messages={[userMessage('inbox_1', 'Delivered already')]}
+        pending={pending}
+      />,
+    )
+
+    expect(screen.queryByText('QUEUED')).not.toBeInTheDocument()
+    expect(screen.queryByText('STEERING')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Delivered already')).toHaveLength(1)
+  })
+
   it('renders step file changes from the assistant snapshot and opens clicked files', () => {
     setupSettings({ simpleChatMode: false, showReasoning: false })
     const onFileClick = vi.fn()

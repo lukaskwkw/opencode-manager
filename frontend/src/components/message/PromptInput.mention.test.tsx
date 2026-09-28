@@ -196,7 +196,7 @@ describe('PromptInput agent mention submission', () => {
     expect(mocks.switchSessionModel).not.toHaveBeenCalled()
   })
 
-  it('queues an @agent mention as an attachment without switching the session agent', async () => {
+  it('steers an @agent mention sent while streaming without a delivery override', async () => {
     renderComponent({ isStreamingResponse: true })
 
     const input = await screen.findByPlaceholderText('Send a message...')
@@ -209,8 +209,9 @@ describe('PromptInput agent mention submission', () => {
       sessionID: 'test-session',
       text: 'ask @reviewer',
       agents: [{ name: 'reviewer', mention: { start: 4, end: 13, text: '@reviewer' } }],
-      delivery: 'queue',
     }))
+    const payload = mocks.sendPrompt.mock.calls[0]?.[0] as { delivery?: string }
+    expect(payload.delivery).toBeUndefined()
     expect(mocks.switchSessionAgent).not.toHaveBeenCalled()
   })
 
