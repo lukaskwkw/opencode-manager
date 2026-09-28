@@ -18,6 +18,7 @@ import { ContextUsageIndicator } from "@/components/session/ContextUsageIndicato
 import { useSession, useInterruptSession, useUpdateSession, useCreateSession } from "@/hooks/useOpenCode";
 import { useSessionTranscript } from "@/hooks/useSessionTranscript";
 import { useAutoOpenWalkthrough } from "@/hooks/useAutoOpenWalkthrough";
+import { useChildSessions } from "@/hooks/useChildSessions";
 import { useRepoActivity } from "@/hooks/useRepoActivity";
 import { useSSE } from "@/hooks/useSSE";
 import { useUIState } from "@/stores/uiStateStore";
@@ -48,6 +49,7 @@ import { useSessionStatus } from "@/stores/sessionStatusStore";
 import type { PageCommandActions } from "@/lib/builtinCommands";
 import { useRedoMessage, useUndoMessage } from "@/hooks/useUndoMessage";
 import { usePermissions, useForms } from "@/contexts/EventContext";
+import { SubagentSessionsProvider } from "@/contexts/SubagentSessionsContext";
 import type { FormInfo, SessionMessageInfo } from "@opencode-manager/shared/opencode";
 import type { SkillFileInfo } from "@opencode-manager/shared";
 import { formatOpenCodeModelRef } from "@opencode-manager/shared/opencode";
@@ -290,6 +292,7 @@ export function SessionDetail() {
     if (lastAssistantMessage && lastAssistantMessage.time.completed === undefined) return true
     return false
   }, [lastAssistantMessage, transcriptStatus])
+  const childSessions = useChildSessions(sessionId, sessionDirectory, isSessionActive)
   const hasIncompleteMessages = lastAssistantMessage ? lastAssistantMessage.time.completed === undefined : false;
   const isStreamingResponse = hasIncompleteMessages && isSessionActive;
   const workspaceBasePath = repo?.localPath;
@@ -750,18 +753,20 @@ export function SessionDetail() {
           {repoLoading || sessionLoading || messagesLoading ? (
             <MessageSkeleton />
           ) : sessionDirectory ? (
-            <MessageThread 
-              sessionID={sessionId} 
-              directory={sessionDirectory}
-              messages={messages}
-              pending={pendingPrompts}
-              isSessionBusy={isSessionActive}
-              onFileClick={handleFileClick}
-              onChildSessionClick={handleChildSessionClick}
-              onOpenWalkthrough={handleShowWalkthrough}
-              onUndoMessage={handleUndoMessage}
-              model={modelRef ? formatOpenCodeModelRef(modelRef) : undefined}
-            />
+            <SubagentSessionsProvider value={childSessions}>
+              <MessageThread 
+                sessionID={sessionId} 
+                directory={sessionDirectory}
+                messages={messages}
+                pending={pendingPrompts}
+                isSessionBusy={isSessionActive}
+                onFileClick={handleFileClick}
+                onChildSessionClick={handleChildSessionClick}
+                onOpenWalkthrough={handleShowWalkthrough}
+                onUndoMessage={handleUndoMessage}
+                model={modelRef ? formatOpenCodeModelRef(modelRef) : undefined}
+              />
+            </SubagentSessionsProvider>
           ) : null}
         </div>
         {sessionDirectory && !isEditingMessage && (
