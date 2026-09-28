@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ContextUsageIndicator } from "@/components/session/ContextUsageIndicator";
 import { useSession, useInterruptSession, useUpdateSession, useCreateSession } from "@/hooks/useOpenCode";
 import { useSessionTranscript } from "@/hooks/useSessionTranscript";
+import { useChildSessions } from "@/hooks/useChildSessions";
 import { useRepoActivity } from "@/hooks/useRepoActivity";
 import { useSSE } from "@/hooks/useSSE";
 import { useUIState } from "@/stores/uiStateStore";
@@ -41,6 +42,7 @@ import { RepoSkillsDialog } from "@/components/repo/RepoSkillsDialog";
 import { compactSession, forkSession, listSessionMessages } from "@/api/opencode";
 import { useRedoMessage, useUndoMessage } from "@/hooks/useUndoMessage";
 import { usePermissions, useForms } from "@/contexts/EventContext";
+import { SubagentSessionsProvider } from "@/contexts/SubagentSessionsContext";
 import type { FormInfo, SessionMessageInfo } from "@opencode-manager/shared/opencode";
 import { FormPrompt } from "@/components/session/FormPrompt";
 import { MinimizedFormIndicator } from "@/components/session/MinimizedFormIndicator";
@@ -227,6 +229,7 @@ export function SessionDetail() {
     if (lastAssistantMessage && lastAssistantMessage.time.completed === undefined) return true
     return false
   }, [lastAssistantMessage, transcriptStatus])
+  const childSessions = useChildSessions(sessionId, sessionDirectory, isSessionActive)
   const hasIncompleteMessages = lastAssistantMessage ? lastAssistantMessage.time.completed === undefined : false;
   const isStreamingResponse = hasIncompleteMessages && isSessionActive;
   const workspaceBasePath = repo?.localPath;
@@ -579,17 +582,19 @@ export function SessionDetail() {
           {repoLoading || sessionLoading || messagesLoading ? (
             <MessageSkeleton />
           ) : sessionDirectory ? (
-            <MessageThread 
-              sessionID={sessionId} 
-              directory={sessionDirectory}
-              messages={messages}
-              pending={pendingPrompts}
-              isSessionBusy={isSessionActive}
-              onFileClick={handleFileClick}
-              onChildSessionClick={handleChildSessionClick}
-              onUndoMessage={handleUndoMessage}
-              model={modelString || undefined}
-            />
+            <SubagentSessionsProvider value={childSessions}>
+              <MessageThread 
+                sessionID={sessionId} 
+                directory={sessionDirectory}
+                messages={messages}
+                pending={pendingPrompts}
+                isSessionBusy={isSessionActive}
+                onFileClick={handleFileClick}
+                onChildSessionClick={handleChildSessionClick}
+                onUndoMessage={handleUndoMessage}
+                model={modelString || undefined}
+              />
+            </SubagentSessionsProvider>
           ) : null}
         </div>
         {sessionDirectory && !isEditingMessage && (

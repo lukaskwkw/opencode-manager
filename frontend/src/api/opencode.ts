@@ -106,6 +106,13 @@ export async function listSessionPage(input: SessionPageInput): Promise<SessionP
   return { items: data, nextCursor: cursor.next ?? undefined }
 }
 
+export async function listChildSessions(parentID: string, directory?: string): Promise<SessionInfo[]> {
+  const { data } = await callOpenCode((api) =>
+    api.session.list({ parentID, limit: 100, ...openCodeLocation(directory) }),
+  )
+  return data
+}
+
 export async function getSession(sessionID: string): Promise<SessionInfo> {
   return callOpenCode((api) => api.session.get({ sessionID }))
 }

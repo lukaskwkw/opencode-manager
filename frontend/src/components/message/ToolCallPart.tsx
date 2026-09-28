@@ -5,6 +5,7 @@ import { useSettings } from '@/hooks/useSettings'
 import { useUserBash } from '@/stores/userBashStore'
 import { useSessionStatusForSession } from '@/stores/sessionStatusStore'
 import { useToolCallPermission } from '@/contexts/EventContext'
+import { useSubagentSessions, childSessionIdFromTitle } from '@/contexts/SubagentSessionsContext'
 import { detectFileReferences } from '@/lib/fileReferences'
 import { ExternalLink, Loader2, Shield } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -109,8 +110,10 @@ export const ToolCallPart = memo(function ToolCallPart({ part, messageID, onFile
   const { preferences } = useSettings()
   const { userBashCommands } = useUserBash()
   const isSubagent = part.name === 'subagent'
-  const subagentSessionId = isSubagent ? getSubagentSessionId(part) : undefined
-  const subagentSessionStatus = useSessionStatusForSession(subagentSessionId)
+  const childSessions = useSubagentSessions()
+  const metadataSessionId = isSubagent ? getSubagentSessionId(part) : undefined
+  const subagentSessionId = metadataSessionId ?? (isSubagent ? childSessionIdFromTitle(part, childSessions) : undefined)
+  const subagentSessionStatus = useSessionStatusForSession(metadataSessionId)
   const pendingPermission = useToolCallPermission(part.id, messageID)
   const isWaitingPermission = part.state.status === 'running' && pendingPermission !== null
   const outputRef = useRef<HTMLDivElement>(null)
@@ -217,7 +220,7 @@ export const ToolCallPart = memo(function ToolCallPart({ part, messageID, onFile
   if (isSubagent) {
     const status = part.state.status
     const isRunning = (status === 'running' || isBackgrounded) && subagentSessionStatus.type !== 'idle'
-    const isCompleted = !isRunning && (status === 'completed' || (status === 'running' && !!subagentSessionId && subagentSessionStatus.type === 'idle'))
+    const isCompleted = !isRunning && (status === 'completed' || (status === 'running' && !!metadataSessionId && subagentSessionStatus.type === 'idle'))
     const isError = status === 'error'
     const description = previewText || 'Sub-agent task'
 
