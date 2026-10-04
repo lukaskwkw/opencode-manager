@@ -5,6 +5,7 @@ Agent prompts vendored from [mihneaptu/opencode-fusion](https://github.com/mihne
 ## Contents
 
 - `agent/*.md` - prompts for the `build`, `plan`, `sidekick`, `research`, `design`, `reviewer`, and `vision` agents. `explore` is an OpenCode built-in agent and has no prompt file.
+- `agent/normal.md` - unrestricted primary escape hatch: plain OpenCode with no Fusion permissions and no delegation requirement. It has no model key, so it follows the top-level default.
 - `opencode.json` / `opencode.local.json` - role to model assignments (Docker and local variants). The `mcp` block in them is optional; `opencode.json` points at the Docker host gateway.
 
 ## Fresh install
