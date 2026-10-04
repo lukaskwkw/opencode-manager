@@ -21,3 +21,4 @@ workspace/
 temp/
 .forge/
 
+.env.docker
