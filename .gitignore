@@ -24,3 +24,4 @@ e2e/.tmp
 test-results/
 playwright-report/
 
+.env.docker
