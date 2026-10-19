@@ -9,8 +9,7 @@ import { useChildSessionReconciliation } from '@/hooks/useOpenCode'
 import { useShell } from '@/hooks/useSessionShells'
 import { clampDisplayText } from '@/lib/clampDisplayText'
 import { useSubagentSessions, childSessionIdFromTitle } from '@/contexts/SubagentSessionsContext'
-import { detectFileReferences } from '@/lib/fileReferences'
-import { ExternalLink, Loader2, Shield } from 'lucide-react'
+import { Ban, ExternalLink, Loader2, Shield } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/ui/copy-button'
@@ -51,6 +50,7 @@ interface ToolCallPartProps {
   repoFullPath?: string
   repoLocalPath?: string
   shellOutcome?: ShellNoticeOutcome
+  interrupted?: boolean
   onFileClick?: (filePath: string, lineNumber?: number) => void
   onChildSessionClick?: (sessionId: string) => void
   onOpenWalkthrough?: (source?: WalkthroughSource) => void
@@ -76,7 +76,7 @@ function ClickableJson({ json, onFileClick }: { json: unknown; onFileClick?: (fi
   )
 }
 
-export const ToolCallPart = memo(function ToolCallPart({ part, messageID, directory, repoFullPath, repoLocalPath, shellOutcome, onFileClick, onChildSessionClick, onOpenWalkthrough }: ToolCallPartProps) {
+export const ToolCallPart = memo(function ToolCallPart({ part, messageID, directory, repoFullPath, repoLocalPath, shellOutcome, interrupted, onFileClick, onChildSessionClick, onOpenWalkthrough }: ToolCallPartProps) {
   const { preferences } = useSettings()
   const { userBashCommands } = useUserBash()
   const isSubagent = part.name === 'subagent'
@@ -133,6 +133,7 @@ export const ToolCallPart = memo(function ToolCallPart({ part, messageID, direct
   }, [expanded, part.name])
 
   const getStatusColor = () => {
+    if (interrupted && part.state.status === 'streaming') return 'text-warning'
     if (isBackgroundShell) return backgroundTaskStatusColor(shellStatus)
     switch (part.state.status) {
       case 'completed':
@@ -152,6 +153,7 @@ export const ToolCallPart = memo(function ToolCallPart({ part, messageID, direct
   )
 
   const getStatusIcon = () => {
+    if (interrupted && part.state.status === 'streaming') return <Ban className="w-3.5 h-3.5" />
     if (isBackgroundShell) return renderShellLifecycleIcon(shellStatus)
     switch (part.state.status) {
       case 'completed':
@@ -366,7 +368,7 @@ export const ToolCallPart = memo(function ToolCallPart({ part, messageID, direct
           ) : null}
 
           <span className="text-muted-foreground text-xs ml-auto">
-            {isWaitingPermission ? 'awaiting permission' : isBackgroundShell ? lifecycleLabel(shellStatus) : part.state.status}
+            {isWaitingPermission ? 'awaiting permission' : isBackgroundShell ? lifecycleLabel(shellStatus) : interrupted ? 'interrupted' : part.state.status}
           </span>
         </button>
 
@@ -387,14 +389,21 @@ export const ToolCallPart = memo(function ToolCallPart({ part, messageID, direct
       {expanded && (
         <div className="bg-card space-y-2 p-3">
           {part.state.status === 'streaming' && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="flex gap-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+            interrupted ? (
+              <div className="flex items-center gap-2 text-sm text-warning">
+                <Ban className="w-3.5 h-3.5 shrink-0" />
+                <span>{'Interrupted \u2014 the model stopped before this tool call was prepared.'}</span>
               </div>
-              <span>Preparing tool call...</span>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+                <span>Preparing tool call...</span>
+              </div>
+            )
           )}
 
           {part.state.status === 'running' && (

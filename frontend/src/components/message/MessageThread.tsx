@@ -28,6 +28,7 @@ import { readShowArtifactCall } from '@/lib/artifactTool'
 import { groupExplorationParts, type AssistantContentItem } from '@/lib/explorationGroups'
 import type { WalkthroughSource } from '@opencode-manager/shared/schemas'
 import { ExplorationGroup } from './ExplorationGroup'
+import { useInterruptedToolIDs } from '@/hooks/useInterruptedToolIDs'
 
 function getMessageText(message: SessionMessageInfo): string {
   switch (message.type) {
@@ -350,6 +351,7 @@ interface MessageRowProps {
   showReasoning: boolean
   groupToolCalls: boolean
   shellOutcomes: ReadonlyMap<string, ShellNoticeOutcome>
+  interruptedIDs: ReadonlySet<string>
 }
 
 const MessageRow = memo(function MessageRow({
@@ -373,6 +375,7 @@ const MessageRow = memo(function MessageRow({
   showReasoning,
   groupToolCalls,
   shellOutcomes,
+  interruptedIDs,
 }: MessageRowProps) {
   const messageTextContent = getMessageText(message)
   const shellOutcomeFor = (part: SessionMessageAssistant['content'][number]) =>
@@ -476,6 +479,7 @@ const MessageRow = memo(function MessageRow({
                   repoFullPath={repoFullPath}
                   repoLocalPath={repoLocalPath}
                   shellOutcome={shellOutcomeFor(part)}
+                  interruptedIDs={interruptedIDs}
                   onFileClick={onFileClick}
                   onChildSessionClick={onChildSessionClick}
                   onOpenWalkthrough={onOpenWalkthrough}
@@ -524,6 +528,7 @@ const MessageRow = memo(function MessageRow({
                     directory={directory}
                     repoFullPath={repoFullPath}
                     repoLocalPath={repoLocalPath}
+                    interruptedIDs={interruptedIDs}
                     onFileClick={onFileClick}
                     onChildSessionClick={onChildSessionClick}
                     onOpenWalkthrough={onOpenWalkthrough}
@@ -536,6 +541,7 @@ const MessageRow = memo(function MessageRow({
                     repoFullPath={repoFullPath}
                     repoLocalPath={repoLocalPath}
                     shellOutcome={shellOutcomeFor(item.part)}
+                    interruptedIDs={interruptedIDs}
                     onFileClick={onFileClick}
                     onChildSessionClick={onChildSessionClick}
                     onOpenWalkthrough={onOpenWalkthrough}
@@ -634,6 +640,7 @@ export const MessageThread = memo(function MessageThread({
   const showReasoning = preferences?.showReasoning ?? false
   const groupToolCalls = preferences?.groupToolCalls ?? true
 
+  const interruptedToolIDs = useInterruptedToolIDs(messages)
   const lastUserMessageId = useMemo(() => findLastUserMessageId(messages), [messages])
   const messageIDs = useMemo(() => new Set(messages.map((message) => message.id)), [messages])
 
@@ -700,6 +707,7 @@ export const MessageThread = memo(function MessageThread({
           showReasoning={showReasoning}
           groupToolCalls={groupToolCalls}
           shellOutcomes={shellOutcomes}
+          interruptedIDs={interruptedToolIDs}
         />
       ))}
       {pending.map((item) => (
