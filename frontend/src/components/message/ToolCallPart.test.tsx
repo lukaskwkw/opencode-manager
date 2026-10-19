@@ -1073,3 +1073,39 @@ describe('ToolCallPart subagent session link', () => {
     expect(screen.queryByText('✓')).not.toBeInTheDocument()
   })
 })
+
+describe('ToolCallPart interrupted streaming state', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.useSettings.mockReturnValue({
+      preferences: { expandToolCalls: true },
+      isLoading: false,
+      updateSettings: vi.fn(),
+      isUpdating: false,
+    })
+    mocks.useToolCallPermission.mockReturnValue(null)
+  })
+
+  const streamingShell = (): SessionMessageAssistantTool => ({
+    type: 'tool',
+    id: 'call_1',
+    name: 'shell',
+    time: { created: 1, ran: 2 },
+    state: { status: 'streaming', input: '' },
+  })
+
+  it('shows the interrupted badge and warning instead of the preparing state', () => {
+    renderWithProviders(<ToolCallPart part={streamingShell()} messageID="msg_1" interrupted />)
+
+    expect(screen.queryByText('Preparing tool call...')).not.toBeInTheDocument()
+    expect(screen.getByText('interrupted')).toBeInTheDocument()
+    expect(screen.getByText('Interrupted \u2014 the model stopped before this tool call was prepared.')).toBeInTheDocument()
+  })
+
+  it('keeps the preparing state when the part is not interrupted', () => {
+    renderWithProviders(<ToolCallPart part={streamingShell()} messageID="msg_1" />)
+
+    expect(screen.getByText('Preparing tool call...')).toBeInTheDocument()
+    expect(screen.queryByText('interrupted')).not.toBeInTheDocument()
+  })
+})

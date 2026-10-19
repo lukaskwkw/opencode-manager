@@ -66,6 +66,21 @@ describe('explorationLabel', () => {
   it('does not report failures for a group without errors', () => {
     expect(explorationLabel([tool('a', 'read')])).toBe('Explored: 1 read')
   })
+
+  it('prefixes with Interrupted when the group contains an interrupted part', () => {
+    const parts = [tool('a', 'read'), tool('b', 'grep'), tool('c', 'glob')]
+
+    expect(explorationLabel(parts, new Set(['b']))).toBe('Interrupted: 1 read, 2 searches')
+  })
+
+  it('keeps the explored prefix when no part is in the interrupted set', () => {
+    expect(explorationLabel([tool('a', 'read'), tool('b', 'read')], new Set(['z']))).toBe('Explored: 2 reads')
+  })
+
+  it('prefers the interrupted prefix over failed members', () => {
+    expect(explorationLabel([tool('a', 'read'), failedTool('b', 'read')], new Set(['a'])))
+      .toBe('Interrupted: 2 reads, 1 failed')
+  })
 })
 
 describe('explorationFailureCount', () => {
