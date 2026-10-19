@@ -42,7 +42,10 @@ export function isExplorationComplete(parts: SessionMessageAssistantTool[]): boo
 }
 
 /** TUI-style summary such as `Explored: 5 reads, 2 searches`. */
-export function explorationLabel(parts: SessionMessageAssistantTool[]): string {
+export function explorationLabel(
+  parts: SessionMessageAssistantTool[],
+  interruptedIDs?: ReadonlySet<string>,
+): string {
   const counts = new Map<string, number>()
   parts.forEach((part) => {
     const tool = part.name.toLowerCase()
@@ -52,5 +55,10 @@ export function explorationLabel(parts: SessionMessageAssistantTool[]): string {
   const names = [...counts].map(([noun, count]) =>
     `${count} ${count === 1 ? noun : noun === 'search' || noun === 'fetch' ? `${noun}es` : `${noun}s`}`,
   )
-  return `${isExplorationComplete(parts) ? 'Explored' : 'Exploring'}: ${names.join(', ')}`
+  const prefix = parts.some((part) => interruptedIDs?.has(part.id) ?? false)
+    ? 'Interrupted'
+    : isExplorationComplete(parts)
+      ? 'Explored'
+      : 'Exploring'
+  return `${prefix}: ${names.join(', ')}`
 }

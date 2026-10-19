@@ -45,4 +45,19 @@ describe('explorationLabel', () => {
   it('reports in-progress groups as exploring', () => {
     expect(explorationLabel([tool('a', 'read'), tool('b', 'read', 'running')])).toBe('Exploring: 2 reads')
   })
+
+  it('prefixes with Interrupted when the group contains an interrupted part', () => {
+    const parts = [tool('a', 'read'), tool('b', 'grep'), tool('c', 'glob')]
+
+    expect(explorationLabel(parts, new Set(['b']))).toBe('Interrupted: 1 read, 2 searches')
+  })
+
+  it('keeps the explored prefix when no part is in the interrupted set', () => {
+    expect(explorationLabel([tool('a', 'read'), tool('b', 'read')], new Set(['z']))).toBe('Explored: 2 reads')
+  })
+
+  it('behaves as before without an interrupted set', () => {
+    expect(explorationLabel([tool('a', 'read'), tool('b', 'read'), tool('c', 'grep'), tool('d', 'glob'), tool('e', 'webfetch')]))
+      .toBe('Explored: 2 reads, 2 searches, 1 fetch')
+  })
 })

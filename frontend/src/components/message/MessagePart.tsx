@@ -13,12 +13,13 @@ interface MessagePartProps {
   messageID?: string
   directory?: string
   shellOutcome?: ShellNoticeOutcome
+  interruptedIDs?: ReadonlySet<string>
   onFileClick?: (filePath: string, lineNumber?: number) => void
   onChildSessionClick?: (sessionId: string) => void
   onOpenWalkthrough?: (source?: WalkthroughSource) => void
 }
 
-export const MessagePart = memo(function MessagePart({ part, messageID, directory, shellOutcome, onFileClick, onChildSessionClick, onOpenWalkthrough }: MessagePartProps) {
+export const MessagePart = memo(function MessagePart({ part, messageID, directory, shellOutcome, interruptedIDs, onFileClick, onChildSessionClick, onOpenWalkthrough }: MessagePartProps) {
   const { preferences } = useSettings()
   const simpleChatMode = preferences?.simpleChatMode ?? false
   const showReasoning = preferences?.showReasoning ?? false
@@ -47,6 +48,7 @@ export const MessagePart = memo(function MessagePart({ part, messageID, director
           messageID={messageID}
           directory={directory}
           shellOutcome={shellOutcome}
+          interrupted={interruptedIDs?.has(part.id) ?? false}
           onFileClick={onFileClick}
           onChildSessionClick={onChildSessionClick}
           onOpenWalkthrough={onOpenWalkthrough}
