@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { VOICE_PAUSE_STORAGE_KEY } from '@opencode-manager/shared/opencode'
 import { STTSettings } from './STTSettings'
+import { normalizeBuiltinLanguage } from '@/lib/sttLanguages'
 import { useSettings } from '@/hooks/useSettings'
 import { useSTT } from '@/hooks/useSTT'
 import { isWebRecognitionSupported, getAvailableLanguages } from '@/lib/webSpeechRecognizer'
@@ -27,7 +28,8 @@ function buildPreferences(stt: Partial<STTConfig> = {}): UserPreferences {
 }
 
 function mockHooks(preferences: UserPreferences = buildPreferences({ enabled: true, provider: 'builtin' })) {
-  vi.mocked(useSettings).mockReturnValue(createUseSettingsMock({ preferences }))
+  const settings = createUseSettingsMock({ preferences })
+  vi.mocked(useSettings).mockReturnValue(settings)
   vi.mocked(useSTT).mockReturnValue({
     startRecording: vi.fn(),
     stopRecording: vi.fn(),
@@ -40,7 +42,8 @@ function mockHooks(preferences: UserPreferences = buildPreferences({ enabled: tr
     isExternalProvider: preferences.stt?.provider === 'external',
   } as ReturnType<typeof useSTT>)
   vi.mocked(isWebRecognitionSupported).mockReturnValue(true)
-  vi.mocked(getAvailableLanguages).mockReturnValue(['en-US'])
+  vi.mocked(getAvailableLanguages).mockReturnValue(['en-US', 'pl-PL'])
+  return settings
 }
 
 function getPauseSelect() {
@@ -93,5 +96,62 @@ describe('STTSettings pause before sending', () => {
 
     expect(window.localStorage.getItem(VOICE_PAUSE_STORAGE_KEY)).toBe('3000')
     expect(getPauseSelect()).toHaveValue('3.0 s')
+  })
+})
+
+describe('STTSettings external language', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    window.localStorage.clear()
+    mockHooks(buildPreferences({ enabled: true, provider: 'external', language: 'en-US' }))
+  })
+
+  it('shows the stored language as a label and lists the available languages', async () => {
+    const user = userEvent.setup()
+    await renderSettings()
+
+    const languageInput = await screen.findByDisplayValue('English')
+    expect(languageInput).toBeInTheDocument()
+
+    await user.click(languageInput)
+
+    expect(await screen.findByText('Auto-detect')).toBeInTheDocument()
+    expect(screen.getByText('Polish')).toBeInTheDocument()
+  })
+
+  it('persists the selected language as an ISO-639-1 code', async () => {
+    const user = userEvent.setup()
+    const settings = mockHooks(buildPreferences({ enabled: true, provider: 'external', language: 'en-US' }))
+    await renderSettings()
+
+    const languageInput = await screen.findByDisplayValue('English')
+    await user.click(languageInput)
+    await user.click(await screen.findByText('Polish'))
+
+    await waitFor(() => expect(screen.getByDisplayValue('Polish')).toBeInTheDocument())
+
+    await waitFor(
+      () =>
+        expect(settings.updateSettings).toHaveBeenCalledWith(
+          expect.objectContaining({ stt: expect.objectContaining({ language: 'pl' }) }),
+        ),
+      { timeout: 3000 },
+    )
+  })
+})
+
+describe('normalizeBuiltinLanguage', () => {
+  it('maps the stored auto value to the browser default', () => {
+    expect(normalizeBuiltinLanguage('auto', ['en-US', 'pl-PL'])).toBe('en-US')
+    expect(normalizeBuiltinLanguage(undefined, ['en-US'])).toBe('en-US')
+  })
+
+  it('maps an ISO-639-1 value to the available BCP-47 option', () => {
+    expect(normalizeBuiltinLanguage('pl', ['en-US', 'pl-PL'])).toBe('pl-PL')
+  })
+
+  it('keeps an explicit BCP-47 value and an unmatched ISO code', () => {
+    expect(normalizeBuiltinLanguage('pl-PL', ['en-US'])).toBe('pl-PL')
+    expect(normalizeBuiltinLanguage('pl', ['en-US'])).toBe('pl')
   })
 })

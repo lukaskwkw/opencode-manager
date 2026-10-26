@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSettings } from '@/hooks/useSettings'
-import { getWebSpeechRecognizer, isWebRecognitionSupported, appendTranscriptSegment, type SpeechRecognitionOptions, type SpeechRecognitionResult, type RecognitionState, type SttEndpointingOptions, type SttEndOfSpeechReason } from '@/lib/webSpeechRecognizer'
+import { getWebSpeechRecognizer, getAvailableLanguages, isWebRecognitionSupported, appendTranscriptSegment, type SpeechRecognitionOptions, type SpeechRecognitionResult, type RecognitionState, type SttEndpointingOptions, type SttEndOfSpeechReason } from '@/lib/webSpeechRecognizer'
 import { AudioRecorder } from '@/lib/audioRecorder'
 import { sttApi } from '@/api/stt'
 import { FetchError } from '@/api/fetchWrapper'
 import { DEFAULT_STT_CONFIG, type STTConfig } from '@/api/types/settings'
+import { normalizeBuiltinLanguage } from '@/lib/sttLanguages'
 
 const STT_START_TIMEOUT_MS = 10_000
 
@@ -326,7 +327,7 @@ export function useSTT(userId = 'default') {
       return started
     } else {
       const recognitionOptions: SpeechRecognitionOptions = {
-        language: config.language,
+        language: normalizeBuiltinLanguage(config.language, getAvailableLanguages()),
         interimResults: true,
         maxAlternatives: 1,
       }

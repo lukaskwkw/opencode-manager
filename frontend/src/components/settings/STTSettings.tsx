@@ -14,6 +14,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Combobox } from '@/components/ui/combobox'
 import { DEFAULT_STT_CONFIG } from '@/api/types/settings'
 import { VOICE_PAUSE_OPTIONS_MS, formatVoicePauseMs } from '@opencode-manager/shared/opencode'
+import { EXTERNAL_STT_LANGUAGE_OPTIONS, normalizeBuiltinLanguage, normalizeExternalLanguage } from '@/lib/sttLanguages'
 
 const sttFormSchema = z.object({
   enabled: z.boolean(),
@@ -353,6 +354,30 @@ export function STTSettings() {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="language"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Language</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            value={normalizeExternalLanguage(field.value)}
+                            onChange={field.onChange}
+                            options={EXTERNAL_STT_LANGUAGE_OPTIONS}
+                            placeholder="Select language..."
+                            ariaLabel="Speech recognition language"
+                            allowCustomValue={false}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Language the audio is spoken in. Auto-detect lets the API guess it from the audio.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </>
               )}
 
@@ -366,7 +391,7 @@ export function STTSettings() {
                         <FormLabel>Language</FormLabel>
                         <FormControl>
                           <Combobox
-                            value={field.value}
+                            value={normalizeBuiltinLanguage(field.value, availableLanguages)}
                             onChange={field.onChange}
                             options={availableLanguages.map(lang => ({
                               value: lang,
