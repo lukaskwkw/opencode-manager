@@ -280,7 +280,7 @@ export function useSTT(userId = 'default') {
       return started
     } else {
       const options: SpeechRecognitionOptions = {
-        language: config.language,
+        language: config.language && config.language !== 'auto' ? config.language : 'en-US',
         interimResults: true,
         maxAlternatives: 1,
       }

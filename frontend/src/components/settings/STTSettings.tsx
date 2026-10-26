@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Combobox } from '@/components/ui/combobox'
 import { DEFAULT_STT_CONFIG } from '@/api/types/settings'
+import { EXTERNAL_STT_LANGUAGE_OPTIONS, normalizeExternalLanguage } from '@/lib/sttLanguages'
 
 const sttFormSchema = z.object({
   enabled: z.boolean(),
@@ -339,6 +340,30 @@ export function STTSettings() {
                         </FormControl>
                         <FormDescription>
                           The speech-to-text model to use (e.g., whisper-1)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="language"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Language</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            value={normalizeExternalLanguage(field.value)}
+                            onChange={field.onChange}
+                            options={EXTERNAL_STT_LANGUAGE_OPTIONS}
+                            placeholder="Select language..."
+                            ariaLabel="Speech recognition language"
+                            allowCustomValue={false}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Language the audio is spoken in. Auto-detect lets the API guess it from the audio.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
