@@ -34,6 +34,7 @@ vi.mock('@/lib/webSpeechRecognizer', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/webSpeechRecognizer')>()
   return {
     appendTranscriptSegment: actual.appendTranscriptSegment,
+    getAvailableLanguages: actual.getAvailableLanguages,
     getWebSpeechRecognizer: mocks.getWebSpeechRecognizer,
     isWebRecognitionSupported: mocks.isWebRecognitionSupported,
   }

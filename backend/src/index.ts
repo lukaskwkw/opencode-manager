@@ -245,8 +245,6 @@ try {
     ipcServer = await createIPCServer(process.env.STORAGE_PATH || undefined)
     logger.info(`Git IPC server running at ${ipcServer.ipcHandlePath}`)
   } catch (error) {
-    // Windows + Bun cannot listen on named pipes (ENOENT) - continue without
-    // the git IPC server; stored-credential git flows stay degraded until fixed.
     logger.warn('Git IPC server unavailable, continuing without it:', error)
     ipcServer = undefined
   }

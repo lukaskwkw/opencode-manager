@@ -228,7 +228,7 @@ describe('PromptInput agent mention submission', () => {
 
     const input = await screen.findByPlaceholderText('Send a message...')
     fireEvent.change(input, { target: { value: 'ask @reviewer' } })
-    fireEvent.click(screen.getByTitle('Queue message'))
+    fireEvent.click(screen.getByTitle('Steer'))
 
     await waitFor(() => expect(mocks.sendPrompt).toHaveBeenCalled())
 

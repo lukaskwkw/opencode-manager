@@ -9,6 +9,7 @@ import { X, CornerUpLeft, GitBranch, ArrowDown, Server, Code2 } from "lucide-rea
 import { SquareFill } from "@/components/ui/square-fill";
 import { Header } from "@/components/ui/header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getServerProjectPath, getSessionListPath, getSessionPath } from '@/lib/navigation'
 import { FetchError } from '@/api/fetchWrapper'
 

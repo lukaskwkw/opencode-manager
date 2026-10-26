@@ -269,7 +269,6 @@ describe('PromptInput goal mode', () => {
     }))
     await waitFor(() => expect(mocks.sendPrompt).toHaveBeenCalledWith(
       expect.objectContaining({ text: 'Ship the feature' }),
-      expect.anything(),
     ))
     const payload = mocks.sendPrompt.mock.calls[0]?.[0] as { delivery?: string }
     expect(payload.delivery).toBeUndefined()

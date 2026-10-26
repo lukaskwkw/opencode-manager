@@ -237,12 +237,12 @@ describe('PromptInput composer layout', () => {
       expect(variables.text).toBe('row send')
     })
 
-    it('queues from the row button while a response streams', () => {
+    it('steers from the row button while a response streams', () => {
       renderComponent({ isStreamingResponse: true })
 
       fireEvent.change(promptInput(), { target: { value: 'follow-up' } })
 
-      expect(screen.getByTitle('Queue message')).toBeInTheDocument()
+      expect(screen.getByTitle('Steer')).toBeInTheDocument()
     })
 
     it('shows View for a pending permission even while the prompt is empty', () => {

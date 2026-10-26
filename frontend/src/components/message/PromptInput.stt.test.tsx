@@ -472,17 +472,17 @@ describe('PromptInput submission', () => {
     })
   })
 
-  it('allows queuing a follow-up while a non-queued send is pending', async () => {
+  it('allows steering a follow-up while a non-queued send is pending', async () => {
     mocks.sendPromptPending.mockReturnValue(true)
     renderComponent({ isStreamingResponse: true })
 
     const input = screen.getByPlaceholderText('Send a message...')
     fireEvent.change(input, { target: { value: 'follow-up' } })
 
-    const queueButton = screen.getByTitle('Queue message')
-    expect(queueButton).not.toBeDisabled()
+    const steerButton = screen.getByTitle('Steer')
+    expect(steerButton).not.toBeDisabled()
 
-    fireEvent.click(queueButton)
+    fireEvent.click(steerButton)
 
     await waitFor(() => expect(input).toHaveValue(''))
     const [callArgs] = mocks.useSendPromptMutateAsync.mock.calls[0] as [{ text: string }]
@@ -494,7 +494,7 @@ describe('PromptInput submission', () => {
 
     const input = screen.getByPlaceholderText('Send a message...')
     fireEvent.change(input, { target: { value: 'queued message' } })
-    fireEvent.click(screen.getByTitle('Queue message'))
+    fireEvent.click(screen.getByTitle('Steer'))
 
     const [callArgs] = mocks.useSendPromptMutateAsync.mock.calls[0] as [{ text: string }]
     expect(callArgs.text).toBe('queued message')

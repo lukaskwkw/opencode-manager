@@ -491,9 +491,6 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
       () => {
         pendingConfirmClearRef.current = null
       },
-      () => {
-        pendingConfirmClearRef.current = null
-      },
     )
 
     onScrollToBottom()
