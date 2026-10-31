@@ -4,7 +4,7 @@ import {
   formatCost,
   formatTokenShare,
   formatToolDuration,
-  hasDailyActivity,
+  hasDailyActivityForBounds,
   tokenComposition,
   toolStats,
   toolSuccessRate,
@@ -31,11 +31,13 @@ describe('usageRangeBounds', () => {
   })
 })
 
-describe('hasDailyActivity', () => {
+describe('hasDailyActivityForBounds', () => {
   it('only reports daily buckets for ranges of at least one day', () => {
-    expect(hasDailyActivity('15m')).toBe(false)
-    expect(hasDailyActivity('24h')).toBe(true)
-    expect(hasDailyActivity('all')).toBe(true)
+    const now = 10 * DAY_MS
+    expect(hasDailyActivityForBounds({ from: now - 15 * 60 * 1000, to: now })).toBe(false)
+    expect(hasDailyActivityForBounds({ from: now - DAY_MS, to: now })).toBe(true)
+    expect(hasDailyActivityForBounds({})).toBe(true)
+    expect(hasDailyActivityForBounds(null)).toBe(false)
   })
 })
 

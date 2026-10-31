@@ -102,7 +102,13 @@ function renderUsage() {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.useSessionStats.mockReturnValue({ isPending: false, isError: false, data: makeStats() })
+  localStorage.clear()
+  mocks.useSessionStats.mockReturnValue({
+    isPending: false,
+    isError: false,
+    data: makeStats(),
+    bounds: { from: Date.UTC(2026, 0, 1), to: Date.UTC(2026, 0, 31) },
+  })
   mocks.useSessionsAcrossDirectories.mockReturnValue({ data: [makeSession()] })
   mocks.useNavigableRepos.mockReturnValue({ repos: REPOS })
   mocks.useSessionUsageQueries.mockReturnValue([
@@ -112,7 +118,12 @@ beforeEach(() => {
 
 describe('Usage', () => {
   it('shows the aggregated range metrics', () => {
-    mocks.useSessionStats.mockReturnValue({ isPending: false, isError: false, data: makeStats() })
+    mocks.useSessionStats.mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: makeStats(),
+      bounds: { from: Date.UTC(2026, 0, 1), to: Date.UTC(2026, 0, 31) },
+    })
 
     renderUsage()
 
@@ -158,6 +169,7 @@ describe('Usage', () => {
       isPending: false,
       isError: true,
       error: new Error('404 Not Found'),
+      bounds: { from: Date.UTC(2026, 0, 1), to: Date.UTC(2026, 0, 31) },
     })
 
     renderUsage()
@@ -171,11 +183,39 @@ describe('Usage', () => {
 
     renderUsage()
 
-    expect(mocks.useSessionStats).toHaveBeenLastCalledWith('30d')
+    expect(mocks.useSessionStats).toHaveBeenLastCalledWith({ range: '30d', from: null, to: null })
 
     await user.click(screen.getByRole('combobox', { name: 'Usage range' }))
     await user.click(await screen.findByRole('option', { name: 'Last 15 minutes' }))
 
-    expect(mocks.useSessionStats).toHaveBeenLastCalledWith('15m')
+    expect(mocks.useSessionStats).toHaveBeenLastCalledWith({ range: '15m', from: null, to: null })
+  })
+
+  it('reveals custom from and to inputs for a custom range', async () => {
+    const user = userEvent.setup()
+
+    renderUsage()
+
+    await user.click(screen.getByRole('combobox', { name: 'Usage range' }))
+    await user.click(await screen.findByRole('option', { name: 'Custom range' }))
+
+    expect(screen.getByLabelText('Usage range start')).toBeTruthy()
+    expect(screen.getByLabelText('Usage range end')).toBeTruthy()
+    expect(mocks.useSessionStats).toHaveBeenLastCalledWith(
+      expect.objectContaining({ range: 'custom' }),
+    )
+  })
+
+  it('asks for usable bounds before loading a custom range', () => {
+    mocks.useSessionStats.mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: undefined,
+      bounds: null,
+    })
+
+    renderUsage()
+
+    expect(screen.getByText('Choose a start and end time to see usage for a custom range.')).toBeTruthy()
   })
 })

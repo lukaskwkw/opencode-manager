@@ -4,6 +4,7 @@ import { loadSessionUsageMessages, type SessionUsageMessages } from '@/api/usage
 import { useOpenCodeServerId } from '@/contexts/OpenCodeServerContext'
 import { serverScopedKey } from '@/lib/serverScope'
 import { summarizeSessionUsage, type SessionUsageSummary } from '@/lib/sessionUsage'
+import type { UsageRangeBounds } from '@/lib/usageStats'
 
 export function sessionUsageQueryKey(sessionID: string): readonly unknown[] {
   return ['opencode', 'session-usage', sessionID]
@@ -19,17 +20,20 @@ function sessionUsageServerQuery(sessionID: string, serverId: string) {
   }
 }
 
-/** Per-session usage summary computed from the session's assistant steps. */
-export function useSessionUsage(sessionID: string | undefined) {
+/** Per-session usage summary computed from the session's assistant steps within the given bounds. */
+export function useSessionUsage(
+  sessionID: string | undefined,
+  bounds?: UsageRangeBounds | null,
+) {
   const serverId = useOpenCodeServerId()
   const query = useQuery<SessionUsageMessages>({
     ...sessionUsageServerQuery(sessionID ?? '', serverId),
     enabled: sessionID !== undefined,
   })
-  const summary = useMemo<SessionUsageSummary | undefined>(
-    () => (query.data ? summarizeSessionUsage(query.data.messages) : undefined),
-    [query.data],
-  )
+  const summary = useMemo<SessionUsageSummary | undefined>(() => {
+    if (!query.data || bounds === null) return undefined
+    return summarizeSessionUsage(query.data.messages, bounds)
+  }, [query.data, bounds])
 
   return { ...query, summary }
 }

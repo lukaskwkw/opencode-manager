@@ -75,6 +75,18 @@ describe('summarizeSessionUsage', () => {
     expect(summary.tokensPerSecond).toBeNull()
   })
 
+  it('drops steps outside the requested bounds', () => {
+    const summary = summarizeSessionUsage(
+      [
+        assistant({ id: 'early', time: { created: 1_000, streamed: 3_000 } }),
+        assistant({ id: 'late', time: { created: 5_000, streamed: 7_000 } }),
+      ],
+      { from: 4_000, to: 10_000 },
+    )
+
+    expect(summary.steps).toBe(1)
+  })
+
   it('aggregates models by reference', () => {
     const summary = summarizeSessionUsage([
       assistant(),

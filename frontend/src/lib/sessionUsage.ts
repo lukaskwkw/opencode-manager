@@ -8,6 +8,7 @@ import type {
   SessionStatsTools,
   TokenUsageInfo,
 } from '@opencode-manager/shared/opencode'
+import type { UsageRangeBounds } from './usageStats'
 import { assistantStreamMs } from './messageUsage'
 
 export interface SessionUsageSummary {
@@ -38,6 +39,13 @@ function addTokens(target: TokenUsageInfo, source: TokenUsageInfo): void {
 
 function emptyToolTotals(): SessionStatsToolTotals {
   return { calls: 0, succeeded: 0, failed: 0, unfinished: 0 }
+}
+
+function isWithinBounds(created: number, bounds?: UsageRangeBounds): boolean {
+  if (!bounds) return true
+  if (bounds.from !== undefined && created < bounds.from) return false
+  if (bounds.to !== undefined && created > bounds.to) return false
+  return true
 }
 
 function median(values: readonly number[]): number | undefined {
@@ -92,9 +100,13 @@ function addTool(tools: Map<string, ToolAccumulator>, part: SessionMessageAssist
 
 /**
  * Aggregates one session's assistant steps into the same shape the server uses for global stats,
- * so the Usage tables and cards render per-session data without a dedicated endpoint.
+ * so the Usage tables and cards render per-session data without a dedicated endpoint. Steps outside
+ * the supplied bounds are skipped, which lets the panel show one range of a session.
  */
-export function summarizeSessionUsage(messages: readonly SessionMessageInfo[]): SessionUsageSummary {
+export function summarizeSessionUsage(
+  messages: readonly SessionMessageInfo[],
+  bounds?: UsageRangeBounds,
+): SessionUsageSummary {
   const tokens = emptyTokens()
   const models = new Map<string, SessionStatsModelUsage>()
   const tools = new Map<string, ToolAccumulator>()
@@ -106,6 +118,7 @@ export function summarizeSessionUsage(messages: readonly SessionMessageInfo[]): 
 
   for (const message of messages) {
     if (message.type !== 'assistant') continue
+    if (!isWithinBounds(message.time.created, bounds)) continue
     steps += 1
     cost += message.cost ?? 0
     if (message.tokens) {

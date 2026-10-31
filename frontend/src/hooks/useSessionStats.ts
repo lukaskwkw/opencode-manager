@@ -3,25 +3,28 @@ import { useQuery } from '@tanstack/react-query'
 import { getSessionStats } from '@/api/usage'
 import { useOpenCodeServerId } from '@/contexts/OpenCodeServerContext'
 import { serverScopedKey } from '@/lib/serverScope'
-import { usageRangeBounds, type UsageRange } from '@/lib/usageStats'
+import { resolveUsageRangeBounds, type UsageRangeSelection } from '@/lib/usageRange'
 
-export function sessionStatsQueryKey(range: UsageRange): readonly unknown[] {
-  return ['opencode', 'stats', range]
+export function sessionStatsQueryKey(selection: UsageRangeSelection): readonly unknown[] {
+  return ['opencode', 'stats', selection.range, selection.from, selection.to]
 }
 
 function browserTimezone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 }
 
-/** Session usage aggregation for a range, read from the active OpenCode server. */
-export function useSessionStats(range: UsageRange) {
+/** Session usage aggregation for the selected range, read from the active OpenCode server. */
+export function useSessionStats(selection: UsageRangeSelection) {
   const serverId = useOpenCodeServerId()
-  const bounds = useMemo(() => usageRangeBounds(range), [range])
+  const bounds = useMemo(() => resolveUsageRangeBounds(selection), [selection])
   const timezone = useMemo(browserTimezone, [])
 
-  return useQuery({
-    queryKey: serverScopedKey(sessionStatsQueryKey(range), serverId),
-    queryFn: () => getSessionStats({ ...bounds, timezone, tools: 'detail' }, serverId),
+  const query = useQuery({
+    queryKey: serverScopedKey(sessionStatsQueryKey(selection), serverId),
+    queryFn: () => getSessionStats({ ...(bounds ?? {}), timezone, tools: 'detail' }, serverId),
+    enabled: bounds !== null,
     staleTime: 60_000,
   })
+
+  return { ...query, bounds }
 }

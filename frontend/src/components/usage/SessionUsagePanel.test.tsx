@@ -32,6 +32,7 @@ function makeSummary(overrides: Partial<SessionUsageSummary> = {}): SessionUsage
 
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
   mocks.useSession.mockReturnValue({
     data: { cost: 0.5, tokens: { input: 100, output: 40, reasoning: 10, cache: { read: 20, write: 5 } } },
   })
@@ -64,7 +65,7 @@ describe('SessionUsagePanel', () => {
 
     render(<SessionUsagePanel sessionID="ses_1" />)
 
-    expect(screen.getByText('This session has no assistant steps yet.')).toBeTruthy()
+    expect(screen.getByText('No assistant steps in this range.')).toBeTruthy()
   })
 
   it('notes when only the newest steps were summarized', () => {
@@ -77,7 +78,7 @@ describe('SessionUsagePanel', () => {
 
     render(<SessionUsagePanel sessionID="ses_1" />)
 
-    expect(screen.getByText('Summarized from the 3 most recent steps.')).toBeTruthy()
+    expect(screen.getByText('Summarized from the 3 most recent steps in this range.')).toBeTruthy()
   })
 
   it('reports an unreadable session', () => {

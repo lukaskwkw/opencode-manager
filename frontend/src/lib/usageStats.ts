@@ -6,7 +6,7 @@ import type {
 } from '@opencode-manager/shared/opencode'
 import { formatDuration } from '@/lib/utils'
 
-export type UsageRange = '15m' | '1h' | '4h' | '8h' | '24h' | '48h' | '7d' | '30d' | '90d' | 'all'
+export type UsageRange = '15m' | '1h' | '4h' | '8h' | '24h' | '48h' | '7d' | '30d' | '90d' | 'all' | 'custom'
 
 export interface UsageRangeOption {
   key: UsageRange
@@ -32,6 +32,7 @@ export const USAGE_RANGES: readonly UsageRangeOption[] = [
   { key: '30d', label: '30d', description: 'Last 30 days', durationMs: 30 * DAY_MS },
   { key: '90d', label: '90d', description: 'Last 90 days', durationMs: 90 * DAY_MS },
   { key: 'all', label: 'All', description: 'All time', durationMs: null },
+  { key: 'custom', label: 'Custom', description: 'Custom range', durationMs: null },
 ]
 
 export interface UsageRangeBounds {
@@ -39,17 +40,18 @@ export interface UsageRangeBounds {
   to?: number
 }
 
-/** Query bounds for a range option, or no bounds at all for the server's whole history. */
-export function usageRangeBounds(range: UsageRange, now: number = Date.now()): UsageRangeBounds {
+/** Query bounds for a fixed range option, or no bounds at all for the server's whole history. */
+export function usageRangeBounds(range: Exclude<UsageRange, 'custom'>, now: number = Date.now()): UsageRangeBounds {
   const option = USAGE_RANGES.find((entry) => entry.key === range)
   if (!option || option.durationMs === null) return {}
   return { from: now - option.durationMs, to: now }
 }
 
 /** Whether the range spans whole days, which is what the server's daily activity buckets need. */
-export function hasDailyActivity(range: UsageRange): boolean {
-  const option = USAGE_RANGES.find((entry) => entry.key === range)
-  return option?.durationMs === null || (option?.durationMs ?? 0) >= DAY_MS
+export function hasDailyActivityForBounds(bounds: UsageRangeBounds | null): boolean {
+  if (bounds === null) return false
+  if (bounds.from === undefined || bounds.to === undefined) return true
+  return bounds.to - bounds.from >= DAY_MS
 }
 
 /** Dollar amount with enough precision to keep sub-cent costs visible. */

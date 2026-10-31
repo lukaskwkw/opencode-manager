@@ -1,14 +1,21 @@
+import { useMemo, type ReactNode } from 'react'
 import { BarChart3 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { ActivitySpinner } from '@/components/ui/activity-spinner'
 import { ErrorBanner } from '@/components/ui/error-banner'
+import { UsageRangePicker } from './UsageRangePicker'
 import { UsageTokenBreakdown } from './UsageTokenBreakdown'
 import { UsageModelsTable } from './UsageModelsTable'
 import { UsageToolsTable } from './UsageToolsTable'
 import { useSession } from '@/hooks/useOpenCode'
 import { useSessionUsage } from '@/hooks/useSessionUsage'
+import {
+  SESSION_USAGE_RANGE_STORAGE_KEY,
+  useUsageRangePreference,
+} from '@/hooks/useUsageRangePreference'
 import { formatCompactTokens } from '@/lib/contextUsage'
 import { formatTokensPerSecond } from '@/lib/messageUsage'
+import { ALL_USAGE_RANGE_SELECTION, resolveUsageRangeBounds } from '@/lib/usageRange'
 import { formatCost, totalTokens } from '@/lib/usageStats'
 import { formatDuration } from '@/lib/utils'
 
@@ -20,35 +27,55 @@ interface SessionKpi {
 
 /** Right-panel usage statistics for the open session, computed from its assistant steps. */
 export function SessionUsagePanel({ sessionID, directory }: { sessionID: string; directory?: string }) {
-  const { summary, isPending, isError, error, data } = useSessionUsage(sessionID)
+  const [selection, setSelection] = useUsageRangePreference(
+    SESSION_USAGE_RANGE_STORAGE_KEY,
+    ALL_USAGE_RANGE_SELECTION,
+  )
+  const bounds = useMemo(() => resolveUsageRangeBounds(selection), [selection])
+  const { summary, isPending, isError, error, data } = useSessionUsage(sessionID, bounds)
   const { data: session } = useSession(sessionID, directory)
 
+  const shell = (content: ReactNode) => (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="shrink-0 border-b border-border px-3 py-2">
+        <UsageRangePicker selection={selection} onChange={setSelection} />
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">{content}</div>
+    </div>
+  )
+
+  if (bounds === null) {
+    return shell(
+      <p className="text-sm text-muted-foreground">
+        Choose a start and end time to see this session's usage.
+      </p>,
+    )
+  }
+
   if (isPending) {
-    return (
+    return shell(
       <div className="flex flex-1 items-center justify-center py-10">
         <ActivitySpinner className="h-5 w-5 text-muted-foreground" />
-      </div>
+      </div>,
     )
   }
 
   if (isError) {
-    return (
-      <div className="p-3">
-        <ErrorBanner
-          title="Session usage unavailable"
-          summary="The session steps could not be read from this OpenCode server."
-          detail={error instanceof Error ? error.message : undefined}
-        />
-      </div>
+    return shell(
+      <ErrorBanner
+        title="Session usage unavailable"
+        summary="The session steps could not be read from this OpenCode server."
+        detail={error instanceof Error ? error.message : undefined}
+      />,
     )
   }
 
   if (!summary || summary.steps === 0) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
+    return shell(
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
         <BarChart3 className="h-6 w-6" />
-        <p>This session has no assistant steps yet.</p>
-      </div>
+        <p>No assistant steps in this range.</p>
+      </div>,
     )
   }
 
@@ -80,8 +107,8 @@ export function SessionUsagePanel({ sessionID, directory }: { sessionID: string;
     },
   ]
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+  return shell(
+    <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-2">
         {kpis.map((kpi) => (
           <Card key={kpi.label}>
@@ -100,9 +127,9 @@ export function SessionUsagePanel({ sessionID, directory }: { sessionID: string;
       <UsageModelsTable models={summary.models} />
       {data?.truncated ? (
         <p className="text-xs text-muted-foreground">
-          Summarized from the {summary.steps.toLocaleString('en-US')} most recent steps.
+          Summarized from the {summary.steps.toLocaleString('en-US')} most recent steps in this range.
         </p>
       ) : null}
-    </div>
+    </div>,
   )
 }
