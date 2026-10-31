@@ -255,6 +255,7 @@ describe('DesktopSidebar', () => {
     expect(screen.getByRole('region', { name: 'Sessions' })).toContainElement(screen.getByTestId('session-tree'))
     expect(screen.queryByRole('button', { name: 'Sessions' })).toBeNull()
     expect(screen.getByText('Home')).toBeInTheDocument()
+    expect(screen.getByText('Usage')).toBeInTheDocument()
     expect(screen.getByText('Settings')).toBeInTheDocument()
     expect(screen.getByText('Logout')).toBeInTheDocument()
   })

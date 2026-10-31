@@ -188,6 +188,15 @@ describe('PromptInput composer layout', () => {
     mocks.sessionData = undefined
   })
 
+  it('offers the chat detail toggle in the controls row', () => {
+    renderComponent()
+
+    const toggle = screen.getByRole('button', { name: 'Full' })
+    expect(controlsRow()).toContainElement(toggle)
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Simple' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
   it('anchors the activity bar in the gap above the controls row', () => {
     useSessionStatus.getState().setStatus('test-session', { type: 'busy' })
 

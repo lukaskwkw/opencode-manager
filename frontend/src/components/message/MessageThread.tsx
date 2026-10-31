@@ -32,6 +32,7 @@ import { useInterruptedToolIDs } from '@/hooks/useInterruptedToolIDs'
 import { ShellPreview, ToolDetails, useToolDetailsState } from './ToolDetails'
 import { cn, formatDuration } from '@/lib/utils'
 import { formatCompactTokens } from '@/lib/contextUsage'
+import { formatMessageTimestamp } from '@/lib/messageTime'
 import {
   assistantStreamMs,
   assistantTokenUsage,
@@ -342,7 +343,7 @@ function QueuedPromptRow({ item }: { item: SessionInboxUser }) {
           skills={item.payload.skills}
         />
         <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{new Date(item.time.created).toLocaleTimeString()}</span>
+          <span>{formatMessageTimestamp(item.time.created)}</span>
           <span className="font-mono text-[11px] font-semibold tracking-wider text-warning">
             {item.delivery === 'queue' ? 'QUEUED' : 'STEERING'}
           </span>
@@ -453,7 +454,7 @@ const MessageRow = memo(function MessageRow({
           />
 
           <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{new Date(message.time.created).toLocaleTimeString()}</span>
+            <span>{formatMessageTimestamp(message.time.created)}</span>
             {((canEditUserMessage && nextAssistantMessageId) || canUndoUserMessage) ? (
               <span className="flex items-center gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                 {canEditUserMessage && nextAssistantMessageId && (
@@ -587,6 +588,8 @@ const MessageRow = memo(function MessageRow({
               <span className="text-[10px] text-orange-500"> · {message.model.variant}</span>
             )}
           </span>
+          <span aria-hidden="true">·</span>
+          <span>{formatMessageTimestamp(message.time.created)}</span>
           {message.time.completed !== undefined ? (
             <>
               <span aria-hidden="true">·</span>

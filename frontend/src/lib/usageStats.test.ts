@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   activityBars,
   formatCost,
+  formatTokenShare,
   formatToolDuration,
+  hasDailyActivity,
   tokenComposition,
   toolStats,
   toolSuccessRate,
@@ -18,8 +20,35 @@ describe('usageRangeBounds', () => {
     expect(usageRangeBounds('7d', now)).toEqual({ from: 3 * DAY_MS, to: now })
   })
 
+  it('anchors sub-day ranges on the supplied clock', () => {
+    const now = 10 * DAY_MS
+    expect(usageRangeBounds('15m', now)).toEqual({ from: now - 15 * 60 * 1000, to: now })
+    expect(usageRangeBounds('48h', now)).toEqual({ from: now - 2 * DAY_MS, to: now })
+  })
+
   it('leaves the whole-history range unbounded', () => {
     expect(usageRangeBounds('all', 10 * DAY_MS)).toEqual({})
+  })
+})
+
+describe('hasDailyActivity', () => {
+  it('only reports daily buckets for ranges of at least one day', () => {
+    expect(hasDailyActivity('15m')).toBe(false)
+    expect(hasDailyActivity('24h')).toBe(true)
+    expect(hasDailyActivity('all')).toBe(true)
+  })
+})
+
+describe('formatTokenShare', () => {
+  it('rounds normal shares to whole percentages', () => {
+    expect(formatTokenShare(0.5)).toBe('50%')
+    expect(formatTokenShare(0.265)).toBe('27%')
+  })
+
+  it('keeps small shares readable', () => {
+    expect(formatTokenShare(0.042)).toBe('4.2%')
+    expect(formatTokenShare(0.004)).toBe('<1%')
+    expect(formatTokenShare(0)).toBe('0%')
   })
 })
 

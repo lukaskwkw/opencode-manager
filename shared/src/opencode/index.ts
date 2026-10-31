@@ -50,6 +50,7 @@ export type {
   SessionStructuredError,
   SessionTransferData,
   SkillInfo,
+  TokenUsageInfo,
   V2Event,
 } from '@opencode/client'
 

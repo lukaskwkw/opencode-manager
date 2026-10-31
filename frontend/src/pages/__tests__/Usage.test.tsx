@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import type { SessionStatsInfo } from '@opencode-manager/shared/opencode'
@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   useSessionStats: vi.fn(),
   useSessionsAcrossDirectories: vi.fn(),
   useNavigableRepos: vi.fn(),
+  useSessionUsageQueries: vi.fn(),
 }))
 
 vi.mock('@/hooks/useSessionStats', () => ({
@@ -23,6 +24,11 @@ vi.mock('@/hooks/useOpenCode', () => ({
 
 vi.mock('@/hooks/useSidebarRepoGroups', () => ({
   useNavigableRepos: mocks.useNavigableRepos,
+}))
+
+vi.mock('@/hooks/useSessionUsage', () => ({
+  useSessionUsage: () => ({ summary: undefined, isPending: false, isError: false, data: undefined }),
+  useSessionUsageQueries: mocks.useSessionUsageQueries,
 }))
 
 const TOKENS = { input: 1_000, output: 500, reasoning: 100, cache: { read: 2_000, write: 300 } }
@@ -73,6 +79,19 @@ function makeSession(overrides: Partial<SessionInfo> = {}): SessionInfo {
 
 const REPOS = [{ id: 7, name: 'alpha', fullPath: '/repos/alpha' }] as Repo[]
 
+function makeAssistantStep() {
+  return {
+    id: 'msg_a1',
+    type: 'assistant',
+    time: { created: 0, streamed: 2_000, completed: 2_500 },
+    agent: 'build',
+    model: { providerID: 'opencode-go', id: 'deepseek-v4.1-flash' },
+    content: [],
+    tokens: { input: 0, output: 60, reasoning: 0, cache: { read: 0, write: 0 } },
+    cost: 0,
+  }
+}
+
 function renderUsage() {
   return render(
     <MemoryRouter>
@@ -86,6 +105,9 @@ beforeEach(() => {
   mocks.useSessionStats.mockReturnValue({ isPending: false, isError: false, data: makeStats() })
   mocks.useSessionsAcrossDirectories.mockReturnValue({ data: [makeSession()] })
   mocks.useNavigableRepos.mockReturnValue({ repos: REPOS })
+  mocks.useSessionUsageQueries.mockReturnValue([
+    { data: { messages: [makeAssistantStep()], truncated: false }, isPending: false, isError: false },
+  ])
 })
 
 describe('Usage', () => {
@@ -98,9 +120,21 @@ describe('Usage', () => {
     expect(screen.getAllByText('$0.420').length).toBeGreaterThan(0)
     expect(screen.getByText('12')).toBeTruthy()
     expect(screen.getByText('2 days')).toBeTruthy()
-    expect(screen.getByText('anthropic/claude-sonnet')).toBeTruthy()
+    expect(screen.getByText('anthropic')).toBeTruthy()
+    expect(screen.getByText('claude-sonnet')).toBeTruthy()
     expect(screen.getByText('bash')).toBeTruthy()
     expect(screen.getByText('80% succeeded')).toBeTruthy()
+  })
+
+  it('adds per-session steps and average throughput to the session table', () => {
+    renderUsage()
+
+    expect(screen.getAllByText('Steps').length).toBeGreaterThan(0)
+    expect(screen.getByText('Avg tok/s')).toBeTruthy()
+    const row = screen.getByRole('link', { name: 'Refactor the parser' }).closest('tr')
+    expect(row).not.toBeNull()
+    expect(within(row as HTMLElement).getByText('1')).toBeTruthy()
+    expect(within(row as HTMLElement).getByText('30')).toBeTruthy()
   })
 
   it('lists the most expensive session with a link into the repo', () => {
@@ -139,8 +173,9 @@ describe('Usage', () => {
 
     expect(mocks.useSessionStats).toHaveBeenLastCalledWith('30d')
 
-    await user.click(screen.getByRole('tab', { name: 'All time' }))
+    await user.click(screen.getByRole('combobox', { name: 'Usage range' }))
+    await user.click(await screen.findByRole('option', { name: 'Last 15 minutes' }))
 
-    expect(mocks.useSessionStats).toHaveBeenLastCalledWith('all')
+    expect(mocks.useSessionStats).toHaveBeenLastCalledWith('15m')
   })
 })

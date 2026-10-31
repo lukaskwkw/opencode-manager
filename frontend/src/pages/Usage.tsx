@@ -3,7 +3,13 @@ import { BarChart3 } from 'lucide-react'
 import { Header } from '@/components/ui/header'
 import { ErrorBanner } from '@/components/ui/error-banner'
 import { ActivitySpinner } from '@/components/ui/activity-spinner'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { UsageSummaryCards } from '@/components/usage/UsageSummaryCards'
 import { UsageTokenBreakdown } from '@/components/usage/UsageTokenBreakdown'
 import { UsageActivityChart } from '@/components/usage/UsageActivityChart'
@@ -13,9 +19,9 @@ import { RecentSessionsTable } from '@/components/usage/RecentSessionsTable'
 import { useSessionStats } from '@/hooks/useSessionStats'
 import { useSessionsAcrossDirectories } from '@/hooks/useOpenCode'
 import { useNavigableRepos } from '@/hooks/useSidebarRepoGroups'
-import { formatStatsRange, USAGE_RANGES, type UsageRange } from '@/lib/usageStats'
+import { formatStatsRange, hasDailyActivity, USAGE_RANGES, type UsageRange } from '@/lib/usageStats'
 
-const RECENT_SESSION_SOURCE_LIMIT = 50
+const RECENT_SESSION_SOURCE_LIMIT = 100
 
 export function Usage() {
   const [range, setRange] = useState<UsageRange>('30d')
@@ -35,15 +41,18 @@ export function Usage() {
             <Header.Title>Usage</Header.Title>
           </div>
           <Header.Actions>
-            <Tabs value={range} onValueChange={(value) => setRange(value as UsageRange)}>
-              <TabsList className="h-8">
+            <Select value={range} onValueChange={(value) => setRange(value as UsageRange)}>
+              <SelectTrigger aria-label="Usage range" className="h-8 w-40 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end" className="max-h-80">
                 {USAGE_RANGES.map((option) => (
-                  <TabsTrigger key={option.key} value={option.key} className="px-2.5 text-xs">
-                    {option.label}
-                  </TabsTrigger>
+                  <SelectItem key={option.key} value={option.key} className="text-xs">
+                    {option.description}
+                  </SelectItem>
                 ))}
-              </TabsList>
-            </Tabs>
+              </SelectContent>
+            </Select>
           </Header.Actions>
         </Header>
 
@@ -64,14 +73,12 @@ export function Usage() {
                 {formatStatsRange(stats.data.range)} · aggregated by the OpenCode server
               </p>
               <UsageSummaryCards stats={stats.data} />
-              <div className="grid gap-3 lg:grid-cols-2">
+              <div className={hasDailyActivity(range) ? 'grid gap-3 lg:grid-cols-2' : 'grid gap-3'}>
                 <UsageTokenBreakdown tokens={stats.data.tokens} />
-                <UsageActivityChart activity={stats.data.activity} />
+                {hasDailyActivity(range) && <UsageActivityChart activity={stats.data.activity} />}
               </div>
-              <div className="grid gap-3 lg:grid-cols-2">
-                <UsageModelsTable models={stats.data.models} />
-                <UsageToolsTable tools={stats.data.tools} />
-              </div>
+              <UsageModelsTable models={stats.data.models} />
+              <UsageToolsTable tools={stats.data.tools} />
               <RecentSessionsTable sessions={sessions} repos={repos} />
             </div>
           ) : null}

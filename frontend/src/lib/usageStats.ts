@@ -6,22 +6,33 @@ import type {
 } from '@opencode-manager/shared/opencode'
 import { formatDuration } from '@/lib/utils'
 
-export type UsageRange = '7d' | '30d' | '90d' | 'all'
+export type UsageRange = '15m' | '1h' | '4h' | '8h' | '24h' | '48h' | '7d' | '30d' | '90d' | 'all'
 
 export interface UsageRangeOption {
   key: UsageRange
+  /** Compact label for range pickers. */
   label: string
-  days: number | null
+  /** Human-readable span shown in the picker and on the page. */
+  description: string
+  durationMs: number | null
 }
 
-export const USAGE_RANGES: readonly UsageRangeOption[] = [
-  { key: '7d', label: '7 days', days: 7 },
-  { key: '30d', label: '30 days', days: 30 },
-  { key: '90d', label: '90 days', days: 90 },
-  { key: 'all', label: 'All time', days: null },
-]
+const MINUTE_MS = 60 * 1000
+const HOUR_MS = 60 * MINUTE_MS
+const DAY_MS = 24 * HOUR_MS
 
-const DAY_MS = 24 * 60 * 60 * 1000
+export const USAGE_RANGES: readonly UsageRangeOption[] = [
+  { key: '15m', label: '15m', description: 'Last 15 minutes', durationMs: 15 * MINUTE_MS },
+  { key: '1h', label: '1h', description: 'Last 1 hour', durationMs: HOUR_MS },
+  { key: '4h', label: '4h', description: 'Last 4 hours', durationMs: 4 * HOUR_MS },
+  { key: '8h', label: '8h', description: 'Last 8 hours', durationMs: 8 * HOUR_MS },
+  { key: '24h', label: '24h', description: 'Last 24 hours', durationMs: DAY_MS },
+  { key: '48h', label: '48h', description: 'Last 48 hours', durationMs: 2 * DAY_MS },
+  { key: '7d', label: '7d', description: 'Last 7 days', durationMs: 7 * DAY_MS },
+  { key: '30d', label: '30d', description: 'Last 30 days', durationMs: 30 * DAY_MS },
+  { key: '90d', label: '90d', description: 'Last 90 days', durationMs: 90 * DAY_MS },
+  { key: 'all', label: 'All', description: 'All time', durationMs: null },
+]
 
 export interface UsageRangeBounds {
   from?: number
@@ -31,8 +42,14 @@ export interface UsageRangeBounds {
 /** Query bounds for a range option, or no bounds at all for the server's whole history. */
 export function usageRangeBounds(range: UsageRange, now: number = Date.now()): UsageRangeBounds {
   const option = USAGE_RANGES.find((entry) => entry.key === range)
-  if (!option || option.days === null) return {}
-  return { from: now - option.days * DAY_MS, to: now }
+  if (!option || option.durationMs === null) return {}
+  return { from: now - option.durationMs, to: now }
+}
+
+/** Whether the range spans whole days, which is what the server's daily activity buckets need. */
+export function hasDailyActivity(range: UsageRange): boolean {
+  const option = USAGE_RANGES.find((entry) => entry.key === range)
+  return option?.durationMs === null || (option?.durationMs ?? 0) >= DAY_MS
 }
 
 /** Dollar amount with enough precision to keep sub-cent costs visible. */
@@ -116,9 +133,21 @@ export function formatToolDuration(ms: number | undefined): string {
   return formatDuration(ms)
 }
 
+/** Share of a token total as a percentage, keeping tiny but non-zero shares visible. */
+export function formatTokenShare(share: number): string {
+  const percent = share * 100
+  if (percent <= 0) return '0%'
+  if (percent < 1) return '<1%'
+  if (percent < 10) return `${percent.toFixed(1)}%`
+  return `${Math.round(percent)}%`
+}
+
 /** Human-readable span of the range the server actually aggregated. */
 export function formatStatsRange(range: SessionStatsInfo['range']): string {
+  const shortRange = range.to - range.from <= 2 * DAY_MS
   const format = (value: number) =>
-    new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    new Date(value).toLocaleString(undefined, shortRange
+      ? { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+      : { month: 'short', day: 'numeric' })
   return `${format(range.from)} – ${format(range.to)}`
 }

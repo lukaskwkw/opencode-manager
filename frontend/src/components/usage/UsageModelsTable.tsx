@@ -32,20 +32,26 @@ export function UsageModelsTable({ models }: { models: SessionStatsInfo['models'
                 const label = formatOpenCodeModelRef(entry.model)
                 return (
                   <tr key={label}>
-                    <td className="max-w-0 truncate px-4 py-2" title={label}>{label}</td>
-                    <td className="hidden px-4 py-2 text-right tabular-nums text-muted-foreground sm:table-cell">
+                    <td className="px-4 py-2" title={label}>
+                      <span className="block text-xs text-muted-foreground">{entry.model.providerID}</span>
+                      <span className="block font-mono text-xs text-foreground">
+                        {entry.model.id}
+                        {entry.model.variant ? `#${entry.model.variant}` : ''}
+                      </span>
+                    </td>
+                    <td className="hidden whitespace-nowrap px-4 py-2 text-right tabular-nums text-muted-foreground sm:table-cell">
                       {entry.steps.toLocaleString('en-US')}
                     </td>
-                    <td className="hidden px-4 py-2 text-right tabular-nums text-muted-foreground sm:table-cell">
+                    <td className="hidden whitespace-nowrap px-4 py-2 text-right tabular-nums text-muted-foreground sm:table-cell">
                       {formatCompactTokens(entry.tokens.input)}
                     </td>
-                    <td className="hidden px-4 py-2 text-right tabular-nums text-muted-foreground sm:table-cell">
+                    <td className="hidden whitespace-nowrap px-4 py-2 text-right tabular-nums text-muted-foreground sm:table-cell">
                       {formatCompactTokens(entry.tokens.output + entry.tokens.reasoning)}
                     </td>
-                    <td className="hidden px-4 py-2 text-right tabular-nums text-muted-foreground md:table-cell">
+                    <td className="hidden whitespace-nowrap px-4 py-2 text-right tabular-nums text-muted-foreground md:table-cell">
                       {formatCompactTokens(entry.tokens.cache.read)}
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums text-foreground">{formatCost(entry.cost)}</td>
+                    <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums text-foreground">{formatCost(entry.cost)}</td>
                   </tr>
                 )
               })}

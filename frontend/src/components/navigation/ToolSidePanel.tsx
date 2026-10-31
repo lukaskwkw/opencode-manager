@@ -21,6 +21,7 @@ import { RepoActionsContent } from '@/components/repo/RepoActionsDialog'
 import { RepoSkillsContent } from '@/components/repo/RepoSkillsDialog'
 import { RepoSecretsContent } from '@/components/secrets/RepoSecretsDialog'
 import { RepoSchedulesContent } from '@/components/schedules/RepoSchedulesContent'
+import { SessionUsagePanel } from '@/components/usage/SessionUsagePanel'
 import type { SkillFileInfo } from '@opencode-manager/shared'
 import type { ModelRef } from '@opencode-manager/shared/opencode'
 import { buildToolItems, toolKeyOf, type MoreDrawerItem } from '@/components/navigation/moreDrawerItems'
@@ -128,7 +129,7 @@ function PanelResizeHandle({ width, minWidth, maxWidth, onWidthChange }: PanelRe
   )
 }
 
-const REMOTE_TOOL_KEYS: ReadonlySet<string> = new Set(['sessions', 'mcp', 'skills', 'source-control', 'terminal'])
+const REMOTE_TOOL_KEYS: ReadonlySet<string> = new Set(['sessions', 'session-usage', 'mcp', 'skills', 'source-control', 'terminal'])
 
 /**
  * Escape closes the floating panel, except while a nested menu is open or the terminal owns
@@ -356,6 +357,7 @@ export function ToolSidePanel({
       )
     }
     if (tool === 'preview') return <PreviewWorkspace isOpen directory={directory} compact />
+    if (tool === 'usage') return sessionId ? <SessionUsagePanel sessionID={sessionId} directory={directory} /> : null
     if (tool === 'mcp') return repoDirectory ? <RepoMcpContent open directory={repoDirectory} /> : null
     if (tool === 'walkthrough') return sessionId ? <ChangesWalkthroughView /> : null
     if (tool === 'sessions') {

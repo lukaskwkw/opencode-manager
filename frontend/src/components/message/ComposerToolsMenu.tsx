@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Paperclip, Plus, Shield, ShieldCheck, Target } from 'lucide-react'
+import { MessagesSquare, Paperclip, Plus, Shield, ShieldCheck, Target } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -26,6 +26,8 @@ interface ComposerToolsMenuProps {
   goalLabel: string
   onToggleGoal: () => void
   onAttachFile: () => void
+  simpleChatMode: boolean
+  onToggleSimpleChat: () => void
 }
 
 /**
@@ -42,6 +44,8 @@ export function ComposerToolsMenu({
   goalLabel,
   onToggleGoal,
   onAttachFile,
+  simpleChatMode,
+  onToggleSimpleChat,
 }: ComposerToolsMenuProps) {
   const isLocalServer = isLocalOpenCodeServer(useOpenCodeServerId())
   const permission = usePermissionModeToggle(sessionID, directory)
@@ -81,6 +85,13 @@ export function ComposerToolsMenu({
               icon={<Target className="h-4 w-4" />}
               title="Goal mode"
               detail={goalDisabled ? goalLabel : undefined}
+            />
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked={simpleChatMode} onCheckedChange={onToggleSimpleChat}>
+            <ToolMenuItemContent
+              icon={<MessagesSquare className="h-4 w-4" />}
+              title="Simple chat mode"
+              detail="Show only messages and replies"
             />
           </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />

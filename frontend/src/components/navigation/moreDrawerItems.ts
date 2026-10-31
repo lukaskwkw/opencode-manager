@@ -59,7 +59,12 @@ export function isSessionDetailPath(pathname: string): boolean {
   return SESSION_DETAIL_PATH.test(pathname)
 }
 
-const NON_TOOL_ITEM_KEYS = new Set(['home', 'settings', 'logout'])
+/** True for routes served by a linked OpenCode server, which cannot show the Manager usage view. */
+export function isLinkedServerRoute(pathname: string): boolean {
+  return SERVER_SESSION_DETAIL_PATH.test(pathname) || SERVER_PROJECT_PATH.test(pathname)
+}
+
+const NON_TOOL_ITEM_KEYS = new Set(['home', 'usage', 'settings', 'logout'])
 
 const MANAGER_ONLY_ITEM_KEYS: ReadonlySet<string> = new Set([
   'files',
@@ -77,10 +82,22 @@ export function isManagerOnlyNavItem(item: MoreDrawerItem): boolean {
   return MANAGER_ONLY_ITEM_KEYS.has(item.key)
 }
 
+/** True for any open session transcript, local repo or linked server. */
+function isAnySessionDetailPath(pathname: string): boolean {
+  return SESSION_DETAIL_PATH.test(pathname) || SERVER_SESSION_DETAIL_PATH.test(pathname)
+}
+
 /** Route-scoped tool items, shown in the desktop tool rail instead of the sidebar. */
 export function buildToolItems(pathname: string): MoreDrawerItem[] {
   const routeItems = buildNavModel(pathname).items.filter((item) => !NON_TOOL_ITEM_KEYS.has(item.key))
-  return [{ key: 'sessions', label: 'Sessions', icon: List, panelTool: 'sessions' }, ...routeItems]
+  const sessionUsageItems: MoreDrawerItem[] = isAnySessionDetailPath(pathname)
+    ? [{ key: 'session-usage', label: 'Usage', icon: BarChart3, panelTool: 'usage' }]
+    : []
+  return [
+    { key: 'sessions', label: 'Sessions', icon: List, panelTool: 'sessions' },
+    ...sessionUsageItems,
+    ...routeItems,
+  ]
 }
 
 /** The `?panel=`/`?dialog=` tool identifier an item targets, preferring its panel tool. */
@@ -91,7 +108,7 @@ export function toolKeyOf(item: MoreDrawerItem): string | null {
 function buildRouteNavModel(pathname: string): NavModel {
   const baseItems = getBaseItems()
 
-  if (SERVER_SESSION_DETAIL_PATH.test(pathname) || SERVER_PROJECT_PATH.test(pathname)) {
+  if (isLinkedServerRoute(pathname)) {
     return {
       primary: [getAssistantNavItem()],
       items: [
@@ -177,7 +194,6 @@ function buildRouteNavModel(pathname: string): NavModel {
       primary: [getAssistantNavItem()],
       items: [
         { key: 'all-schedules', label: 'All Schedules', icon: CalendarClock, to: '/schedules' },
-        getUsageItem(),
         { key: 'files', label: 'Files', icon: Folder, dialog: 'files' },
         ...baseItems,
       ],
@@ -186,13 +202,14 @@ function buildRouteNavModel(pathname: string): NavModel {
 
   return {
     primary: [getAssistantNavItem()],
-    items: [getUsageItem(), ...baseItems],
+    items: baseItems,
   }
 }
 
 export function buildNavModel(pathname: string): NavModel {
   const { primary, items } = buildRouteNavModel(pathname)
-  return { primary, items: [getHomeItem(), ...items] }
+  const usageItems = isLinkedServerRoute(pathname) ? [] : [getUsageItem()]
+  return { primary, items: [getHomeItem(), ...usageItems, ...items] }
 }
 
 export function buildMoreItems(pathname: string): MoreDrawerItem[] {

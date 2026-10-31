@@ -187,6 +187,18 @@ describe('MessageThread', () => {
     expect(screen.getByText('/repo/a.ts')).toBeInTheDocument()
   })
 
+  it('shows the message date in the assistant footer', () => {
+    setupSettings({ simpleChatMode: false, showReasoning: false })
+    const created = new Date(2026, 0, 2, 10, 30, 15).getTime()
+    const messages = [
+      assistantMessage('1', [textPart('hello')], { time: { created, completed: created + 1_000 } }),
+    ]
+
+    render(<MessageThread sessionID="test-session" messages={messages} pending={[]} />)
+
+    expect(screen.getByText(new Date(created).toLocaleDateString(), { exact: false })).toBeInTheDocument()
+  })
+
   it('renders instruction updates as a single notice line without the instruction body', () => {
     setupSettings({ simpleChatMode: false, showReasoning: false })
 

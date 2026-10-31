@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar'
 import { List } from 'lucide-react'
 
-const FOOTER_ITEM_KEYS = new Set(['home', 'settings', 'logout'])
+const FOOTER_ITEM_KEYS = new Set(['home', 'usage', 'settings', 'logout'])
 
 function DesktopSessionsPicker({ onDismiss }: { onDismiss: () => void }) {
   const { currentRepo, activeSessionID, remote } = useSessionPickerRouteScope(true)

@@ -83,6 +83,12 @@ vi.mock('@/components/session/ChangesWalkthroughSheet', () => ({
   ChangesWalkthroughView: () => <div>walkthrough-tool</div>,
 }))
 
+vi.mock('@/components/usage/SessionUsagePanel', () => ({
+  SessionUsagePanel: ({ sessionID }: { sessionID: string }) => (
+    <div>session-usage-tool {sessionID}</div>
+  ),
+}))
+
 function LocationProbe() {
   const location = useLocation()
   return (
@@ -453,6 +459,17 @@ describe('ToolSidePanel', () => {
     expect(search().get('panel')).toBe('schedules')
   })
 
+  it('opens the session usage panel from the rail', async () => {
+    const user = userEvent.setup()
+    renderAt('')
+
+    await user.click(await screen.findByRole('button', { name: 'Usage' }))
+
+    expect(await screen.findByText('session-usage-tool ses_1')).toBeInTheDocument()
+    expect(screen.getByTestId('pathname').textContent).toBe('/repos/1/sessions/ses_1')
+    expect(search().get('panel')).toBe('usage')
+  })
+
   it('drops schedule selection params when switching away from schedules', async () => {
     const user = userEvent.setup()
     renderAt('?panel=schedules&jobId=4&scheduleTab=runs&runId=9')
@@ -536,7 +553,7 @@ describe('ToolSidePanel', () => {
       within(rail)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim()),
-    ).toEqual(['Sessions', 'MCP', 'Skills', 'Source Control', 'Terminal'])
+    ).toEqual(['Sessions', 'Usage', 'MCP', 'Skills', 'Source Control', 'Terminal'])
 
     await user.click(screen.getByRole('button', { name: 'MCP' }))
     expect(await screen.findByText('mcp-tool')).toBeInTheDocument()

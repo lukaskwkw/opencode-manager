@@ -34,6 +34,7 @@ import { PermissionModeToggle } from '@/components/session/PermissionModeToggle'
 import { SessionSandboxMenu } from '@/components/session/SessionSandboxMenu'
 import { ComposerModelPill } from './ComposerModelPill'
 import { ComposerToolsMenu } from './ComposerToolsMenu'
+import { SimpleChatModeToggle } from './SimpleChatModeToggle'
 import { useSessionGoal, useStartSessionGoal } from '@/hooks/useSessionGoals'
 import { useSessionPermissionMode } from '@/hooks/useSessionPermissionMode'
 import { detectMentionTrigger, parsePromptToInput, getFilename, getDirectory, type MentionItem } from '@/lib/promptParser'
@@ -177,8 +178,9 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
   const imageAttachmentsRef = useRef(imageAttachments)
 
   const sttAvailability = useSttAvailability()
-  const { preferences } = useSettings()
+  const { preferences, updateSettings } = useSettings()
   const dictateOnly = preferences?.stt?.autoSend === false
+  const simpleChatMode = preferences?.simpleChatMode ?? false
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1346,6 +1348,12 @@ return (
                   </IconToggleButton>
                 </>
               ) : null}
+              {!isMobile && (
+                <SimpleChatModeToggle
+                  simpleChatMode={simpleChatMode}
+                  onChange={(next) => updateSettings({ simpleChatMode: next })}
+                />
+              )}
               <ComposerModelPill
                 directory={directory}
                 sessionID={sessionID}
@@ -1395,6 +1403,8 @@ return (
               goalLabel={goalButtonLabel}
               onToggleGoal={toggleGoalArmed}
               onAttachFile={openFilePicker}
+              simpleChatMode={simpleChatMode}
+              onToggleSimpleChat={() => updateSettings({ simpleChatMode: !simpleChatMode })}
             />
           )}
         </div>
