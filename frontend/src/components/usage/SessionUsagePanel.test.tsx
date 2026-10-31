@@ -5,15 +5,10 @@ import type { SessionUsageSummary } from '@/lib/sessionUsage'
 
 const mocks = vi.hoisted(() => ({
   useSessionUsage: vi.fn(),
-  useSession: vi.fn(),
 }))
 
 vi.mock('@/hooks/useSessionUsage', () => ({
   useSessionUsage: mocks.useSessionUsage,
-}))
-
-vi.mock('@/hooks/useOpenCode', () => ({
-  useSession: mocks.useSession,
 }))
 
 function makeSummary(overrides: Partial<SessionUsageSummary> = {}): SessionUsageSummary {
@@ -33,9 +28,6 @@ function makeSummary(overrides: Partial<SessionUsageSummary> = {}): SessionUsage
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
-  mocks.useSession.mockReturnValue({
-    data: { cost: 0.5, tokens: { input: 100, output: 40, reasoning: 10, cache: { read: 20, write: 5 } } },
-  })
   mocks.useSessionUsage.mockReturnValue({
     summary: makeSummary(),
     isPending: false,
@@ -48,7 +40,7 @@ describe('SessionUsagePanel', () => {
   it('shows the session cost, throughput, tokens and steps', () => {
     render(<SessionUsagePanel sessionID="ses_1" />)
 
-    expect(screen.getByText('$0.500')).toBeTruthy()
+    expect(screen.getByText('$0.012')).toBeTruthy()
     expect(screen.getByText('25')).toBeTruthy()
     expect(screen.getByText('175')).toBeTruthy()
     expect(screen.getByText('Steps')).toBeTruthy()

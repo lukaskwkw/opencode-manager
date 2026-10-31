@@ -357,7 +357,7 @@ export function ToolSidePanel({
       )
     }
     if (tool === 'preview') return <PreviewWorkspace isOpen directory={directory} compact />
-    if (tool === 'usage') return sessionId ? <SessionUsagePanel sessionID={sessionId} directory={directory} /> : null
+    if (tool === 'usage') return sessionId ? <SessionUsagePanel sessionID={sessionId} /> : null
     if (tool === 'mcp') return repoDirectory ? <RepoMcpContent open directory={repoDirectory} /> : null
     if (tool === 'walkthrough') return sessionId ? <ChangesWalkthroughView /> : null
     if (tool === 'sessions') {

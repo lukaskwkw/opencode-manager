@@ -7,7 +7,6 @@ import { UsageRangePicker } from './UsageRangePicker'
 import { UsageTokenBreakdown } from './UsageTokenBreakdown'
 import { UsageModelsTable } from './UsageModelsTable'
 import { UsageToolsTable } from './UsageToolsTable'
-import { useSession } from '@/hooks/useOpenCode'
 import { useSessionUsage } from '@/hooks/useSessionUsage'
 import {
   SESSION_USAGE_RANGE_STORAGE_KEY,
@@ -26,14 +25,13 @@ interface SessionKpi {
 }
 
 /** Right-panel usage statistics for the open session, computed from its assistant steps. */
-export function SessionUsagePanel({ sessionID, directory }: { sessionID: string; directory?: string }) {
+export function SessionUsagePanel({ sessionID }: { sessionID: string }) {
   const [selection, setSelection] = useUsageRangePreference(
     SESSION_USAGE_RANGE_STORAGE_KEY,
     ALL_USAGE_RANGE_SELECTION,
   )
   const bounds = useMemo(() => resolveUsageRangeBounds(selection), [selection])
   const { summary, isPending, isError, error, data } = useSessionUsage(sessionID, bounds)
-  const { data: session } = useSession(sessionID, directory)
 
   const shell = (content: ReactNode) => (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -79,8 +77,8 @@ export function SessionUsagePanel({ sessionID, directory }: { sessionID: string;
     )
   }
 
-  const tokens = session?.tokens ?? summary.tokens
-  const cost = session?.cost ?? summary.cost
+  const tokens = summary.tokens
+  const cost = summary.cost
   const toolCalls = summary.tools.mode === 'none' ? 0 : summary.tools.totals.calls
   const kpis: SessionKpi[] = [
     {

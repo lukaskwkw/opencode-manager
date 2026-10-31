@@ -49,7 +49,7 @@ export function UsageRangePicker({ selection, onChange, className }: UsageRangeP
         </SelectContent>
       </Select>
       {isCustom ? (
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
           <Input
             type="datetime-local"
             aria-label="Usage range start"
@@ -57,7 +57,7 @@ export function UsageRangePicker({ selection, onChange, className }: UsageRangeP
             value={selection.from === null ? '' : toDateTimeLocalValue(selection.from)}
             max={selection.to === null ? undefined : toDateTimeLocalValue(selection.to)}
             onChange={(event) => onChange({ ...selection, from: fromDateTimeLocalValue(event.target.value) })}
-            className="h-8 w-36 text-xs"
+            className="h-8 w-48 text-xs"
           />
           <span className="text-xs text-muted-foreground">–</span>
           <Input
@@ -67,7 +67,7 @@ export function UsageRangePicker({ selection, onChange, className }: UsageRangeP
             value={selection.to === null ? '' : toDateTimeLocalValue(selection.to)}
             min={selection.from === null ? undefined : toDateTimeLocalValue(selection.from)}
             onChange={(event) => onChange({ ...selection, to: fromDateTimeLocalValue(event.target.value) })}
-            className="h-8 w-36 text-xs"
+            className="h-8 w-48 text-xs"
           />
         </div>
       ) : null}
