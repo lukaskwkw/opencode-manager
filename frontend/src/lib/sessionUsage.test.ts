@@ -4,7 +4,7 @@ import type {
   SessionMessageAssistantTool,
   SessionMessageInfo,
 } from '@opencode-manager/shared/opencode'
-import { summarizeSessionUsage } from './sessionUsage'
+import { summarizeSessionUsage, sessionModelRefs } from './sessionUsage'
 
 const TOKENS = { input: 100, output: 50, reasoning: 10, cache: { read: 20, write: 5 } }
 
@@ -85,6 +85,33 @@ describe('summarizeSessionUsage', () => {
     )
 
     expect(summary.steps).toBe(1)
+  })
+
+  it('keeps only the requested models', () => {
+    const summary = summarizeSessionUsage(
+      [
+        assistant(),
+        assistant({ id: 'other', model: { providerID: 'anthropic', id: 'claude' } }),
+      ],
+      undefined,
+      ['opencode-go/deepseek-v4.1-flash'],
+    )
+
+    expect(summary.steps).toBe(1)
+    expect(summary.models.map((model) => model.model.providerID)).toEqual(['opencode-go'])
+  })
+
+  it('lists the model references used in the range', () => {
+    const refs = sessionModelRefs(
+      [
+        assistant(),
+        assistant({ id: 'other', model: { providerID: 'anthropic', id: 'claude' } }),
+        assistant({ id: 'late', time: { created: 9_000, streamed: 11_000 } }),
+      ],
+      { from: 0, to: 8_000 },
+    )
+
+    expect(refs).toEqual(['anthropic/claude', 'opencode-go/deepseek-v4.1-flash'])
   })
 
   it('aggregates models by reference', () => {

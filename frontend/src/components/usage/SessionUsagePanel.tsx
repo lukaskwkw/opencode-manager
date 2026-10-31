@@ -1,9 +1,10 @@
-import { useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { BarChart3 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { ActivitySpinner } from '@/components/ui/activity-spinner'
 import { ErrorBanner } from '@/components/ui/error-banner'
 import { UsageRangePicker } from './UsageRangePicker'
+import { UsageModelFilter } from './UsageModelFilter'
 import { UsageTokenBreakdown } from './UsageTokenBreakdown'
 import { UsageModelsTable } from './UsageModelsTable'
 import { UsageToolsTable } from './UsageToolsTable'
@@ -15,6 +16,7 @@ import {
 import { formatCompactTokens } from '@/lib/contextUsage'
 import { formatTokensPerSecond } from '@/lib/messageUsage'
 import { ALL_USAGE_RANGE_SELECTION, resolveUsageRangeBounds } from '@/lib/usageRange'
+import { sessionModelRefs, summarizeSessionUsage } from '@/lib/sessionUsage'
 import { formatCost, totalTokens } from '@/lib/usageStats'
 import { formatDuration } from '@/lib/utils'
 
@@ -30,13 +32,41 @@ export function SessionUsagePanel({ sessionID }: { sessionID: string }) {
     SESSION_USAGE_RANGE_STORAGE_KEY,
     ALL_USAGE_RANGE_SELECTION,
   )
+  const [selectedModels, setSelectedModels] = useState<string[]>([])
   const bounds = useMemo(() => resolveUsageRangeBounds(selection), [selection])
-  const { summary, isPending, isError, error, data } = useSessionUsage(sessionID, bounds)
+  const { data, isPending, isError, error } = useSessionUsage(sessionID)
+
+  const modelRefs = useMemo(
+    () => (data && bounds !== null ? sessionModelRefs(data.messages, bounds) : []),
+    [data, bounds],
+  )
+  const modelKey = modelRefs.join('|')
+
+  useEffect(() => {
+    const available = new Set(modelKey === '' ? [] : modelKey.split('|'))
+    setSelectedModels((current) => {
+      const next = current.filter((model) => available.has(model))
+      return next.length === current.length ? current : next
+    })
+  }, [modelKey])
+
+  const activeModels = useMemo(
+    () => selectedModels.filter((model) => modelRefs.includes(model)),
+    [selectedModels, modelRefs],
+  )
+
+  const summary = useMemo(() => {
+    if (!data || bounds === null) return undefined
+    return summarizeSessionUsage(data.messages, bounds, activeModels)
+  }, [data, bounds, activeModels])
 
   const shell = (content: ReactNode) => (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-border px-3 py-2">
-        <UsageRangePicker selection={selection} onChange={setSelection} />
+        <div className="flex flex-col gap-2">
+          <UsageRangePicker selection={selection} onChange={setSelection} />
+          <UsageModelFilter models={modelRefs} selected={selectedModels} onChange={setSelectedModels} />
+        </div>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">{content}</div>
     </div>
@@ -72,18 +102,20 @@ export function SessionUsagePanel({ sessionID }: { sessionID: string }) {
     return shell(
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
         <BarChart3 className="h-6 w-6" />
-        <p>No assistant steps in this range.</p>
+        <p>
+          {activeModels.length > 0
+            ? 'No assistant steps for the selected models in this range.'
+            : 'No assistant steps in this range.'}
+        </p>
       </div>,
     )
   }
 
-  const tokens = summary.tokens
-  const cost = summary.cost
   const toolCalls = summary.tools.mode === 'none' ? 0 : summary.tools.totals.calls
   const kpis: SessionKpi[] = [
     {
       label: 'Spend',
-      value: formatCost(cost),
+      value: formatCost(summary.cost),
       detail: `${summary.models.length} ${summary.models.length === 1 ? 'model' : 'models'}`,
     },
     {
@@ -95,8 +127,8 @@ export function SessionUsagePanel({ sessionID }: { sessionID: string }) {
     },
     {
       label: 'Tokens',
-      value: formatCompactTokens(totalTokens(tokens)),
-      detail: `${formatCompactTokens(tokens.input)} in · ${formatCompactTokens(tokens.output + tokens.reasoning)} out`,
+      value: formatCompactTokens(totalTokens(summary.tokens)),
+      detail: `${formatCompactTokens(summary.tokens.input)} in · ${formatCompactTokens(summary.tokens.output + summary.tokens.reasoning)} out`,
     },
     {
       label: 'Steps',
@@ -121,7 +153,7 @@ export function SessionUsagePanel({ sessionID }: { sessionID: string }) {
       {summary.tools.mode === 'detail' && summary.tools.totals.calls > 0 && (
         <UsageToolsTable tools={summary.tools} />
       )}
-      <UsageTokenBreakdown tokens={tokens} />
+      <UsageTokenBreakdown tokens={summary.tokens} />
       <UsageModelsTable models={summary.models} />
       {data?.truncated ? (
         <p className="text-xs text-muted-foreground">

@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import type { SessionStatsModelUsage } from '@opencode-manager/shared/opencode'
 import {
   activityBars,
+  filterModelUsage,
   formatCost,
   formatTokenShare,
   formatToolDuration,
   hasDailyActivityForBounds,
+  sumModelUsage,
   tokenComposition,
   toolStats,
   toolSuccessRate,
@@ -72,6 +75,36 @@ describe('formatCost', () => {
 describe('totalTokens', () => {
   it('includes every counter', () => {
     expect(totalTokens({ input: 1, output: 2, reasoning: 3, cache: { read: 4, write: 5 } })).toBe(15)
+  })
+})
+
+describe('model scope', () => {
+  const models: SessionStatsModelUsage[] = [
+    {
+      model: { providerID: 'provider-a', id: 'one' },
+      steps: 2,
+      tokens: { input: 1, output: 2, reasoning: 3, cache: { read: 4, write: 5 } },
+      cost: 0.5,
+    },
+    {
+      model: { providerID: 'provider-b', id: 'two' },
+      steps: 1,
+      tokens: { input: 10, output: 20, reasoning: 30, cache: { read: 40, write: 50 } },
+      cost: 0.25,
+    },
+  ]
+
+  it('keeps only the models the filter names', () => {
+    expect(filterModelUsage(models, ['provider-a/one'])).toEqual([models[0]])
+    expect(filterModelUsage(models, [])).toEqual([])
+  })
+
+  it('sums tokens, cost and steps across the selection', () => {
+    expect(sumModelUsage(models)).toEqual({
+      tokens: { input: 11, output: 22, reasoning: 33, cache: { read: 44, write: 55 } },
+      cost: 0.75,
+      steps: 3,
+    })
   })
 })
 

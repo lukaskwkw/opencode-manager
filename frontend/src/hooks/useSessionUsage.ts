@@ -1,10 +1,7 @@
-import { useMemo } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { loadSessionUsageMessages, type SessionUsageMessages } from '@/api/usage'
 import { useOpenCodeServerId } from '@/contexts/OpenCodeServerContext'
 import { serverScopedKey } from '@/lib/serverScope'
-import { summarizeSessionUsage, type SessionUsageSummary } from '@/lib/sessionUsage'
-import type { UsageRangeBounds } from '@/lib/usageStats'
 
 export function sessionUsageQueryKey(sessionID: string): readonly unknown[] {
   return ['opencode', 'session-usage', sessionID]
@@ -20,22 +17,13 @@ function sessionUsageServerQuery(sessionID: string, serverId: string) {
   }
 }
 
-/** Per-session usage summary computed from the session's assistant steps within the given bounds. */
-export function useSessionUsage(
-  sessionID: string | undefined,
-  bounds?: UsageRangeBounds | null,
-) {
+/** Assistant steps of one session, which the session usage panel summarizes within its filters. */
+export function useSessionUsage(sessionID: string | undefined) {
   const serverId = useOpenCodeServerId()
-  const query = useQuery<SessionUsageMessages>({
+  return useQuery<SessionUsageMessages>({
     ...sessionUsageServerQuery(sessionID ?? '', serverId),
     enabled: sessionID !== undefined,
   })
-  const summary = useMemo<SessionUsageSummary | undefined>(() => {
-    if (!query.data || bounds === null) return undefined
-    return summarizeSessionUsage(query.data.messages, bounds)
-  }, [query.data, bounds])
-
-  return { ...query, summary }
 }
 
 /** Usage query per session, in the same order as the supplied ids. */

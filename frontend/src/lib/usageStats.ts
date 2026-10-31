@@ -1,9 +1,12 @@
 import type {
   SessionStatsInfo,
+  SessionStatsModelUsage,
   SessionStatsToolTotals,
   SessionStatsToolUsage,
   SessionStatsTools,
+  TokenUsageInfo,
 } from '@opencode-manager/shared/opencode'
+import { formatOpenCodeModelRef } from '@opencode-manager/shared/opencode'
 import { formatDuration } from '@/lib/utils'
 
 export type UsageRange = '15m' | '1h' | '4h' | '8h' | '24h' | '48h' | '7d' | '30d' | '90d' | 'all' | 'custom'
@@ -88,6 +91,40 @@ export function tokenComposition(tokens: SessionStatsInfo['tokens']): TokenSlice
 
 export function totalTokens(tokens: SessionStatsInfo['tokens']): number {
   return tokens.input + tokens.output + tokens.reasoning + tokens.cache.read + tokens.cache.write
+}
+
+/** Keeps only the model aggregates the filter selected, matching by the formatted model reference. */
+export function filterModelUsage(
+  models: readonly SessionStatsModelUsage[],
+  refs: readonly string[],
+): SessionStatsModelUsage[] {
+  const selected = new Set(refs)
+  return models.filter((entry) => selected.has(formatOpenCodeModelRef(entry.model)))
+}
+
+export interface ModelUsageTotals {
+  tokens: TokenUsageInfo
+  cost: number
+  steps: number
+}
+
+/** Totals over a set of per-model aggregates, for a model-filtered usage scope. */
+export function sumModelUsage(models: readonly SessionStatsModelUsage[]): ModelUsageTotals {
+  const tokens: TokenUsageInfo = { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } }
+  let cost = 0
+  let steps = 0
+
+  for (const entry of models) {
+    tokens.input += entry.tokens.input
+    tokens.output += entry.tokens.output
+    tokens.reasoning += entry.tokens.reasoning
+    tokens.cache.read += entry.tokens.cache.read
+    tokens.cache.write += entry.tokens.cache.write
+    cost += entry.cost
+    steps += entry.steps
+  }
+
+  return { tokens, cost, steps }
 }
 
 export interface ActivityBar {

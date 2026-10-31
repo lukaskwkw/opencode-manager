@@ -60,6 +60,12 @@ function makeStats(overrides: Partial<SessionStatsInfo> = {}): SessionStatsInfo 
         tokens: TOKENS,
         cost: 0.42,
       },
+      {
+        model: { providerID: 'openai', id: 'gpt-5' },
+        steps: 10,
+        tokens: { input: 10, output: 5, reasoning: 0, cache: { read: 0, write: 0 } },
+        cost: 0.58,
+      },
     ],
     ...overrides,
   } as SessionStatsInfo
@@ -146,6 +152,25 @@ describe('Usage', () => {
     expect(row).not.toBeNull()
     expect(within(row as HTMLElement).getByText('1')).toBeTruthy()
     expect(within(row as HTMLElement).getByText('30')).toBeTruthy()
+  })
+
+  it('scopes the dashboard to the selected models and hides global-only sections', async () => {
+    const user = userEvent.setup()
+
+    renderUsage()
+
+    expect(screen.getByText('Tool reliability')).toBeTruthy()
+    expect(screen.getByText('Sessions by spend')).toBeTruthy()
+
+    await user.click(screen.getByRole('combobox', { name: 'Model filter' }))
+    await user.click(await screen.findByRole('option', { name: 'anthropic/claude-sonnet' }))
+
+    expect(screen.getByText(/Filtered to 1 model/)).toBeTruthy()
+    expect(screen.queryByText('Tool reliability')).toBeNull()
+    expect(screen.queryByText('Sessions by spend')).toBeNull()
+    expect(screen.queryByText('Steps per day')).toBeNull()
+    expect(screen.queryByText('Prompts')).toBeNull()
+    expect(screen.getAllByText('$0.420').length).toBeGreaterThan(0)
   })
 
   it('lists the most expensive session with a link into the repo', () => {

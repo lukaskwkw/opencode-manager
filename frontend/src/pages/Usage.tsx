@@ -1,8 +1,12 @@
+import { useEffect, useMemo, useState } from 'react'
 import { BarChart3 } from 'lucide-react'
+import { formatOpenCodeModelRef } from '@opencode-manager/shared/opencode'
 import { Header } from '@/components/ui/header'
 import { ErrorBanner } from '@/components/ui/error-banner'
 import { ActivitySpinner } from '@/components/ui/activity-spinner'
 import { UsageRangePicker } from '@/components/usage/UsageRangePicker'
+import { UsageModelFilter } from '@/components/usage/UsageModelFilter'
+import { UsageModelScopeCards } from '@/components/usage/UsageModelScopeCards'
 import { UsageSummaryCards } from '@/components/usage/UsageSummaryCards'
 import { UsageTokenBreakdown } from '@/components/usage/UsageTokenBreakdown'
 import { UsageActivityChart } from '@/components/usage/UsageActivityChart'
@@ -13,18 +17,45 @@ import { useSessionStats } from '@/hooks/useSessionStats'
 import { useSessionsAcrossDirectories } from '@/hooks/useOpenCode'
 import { useNavigableRepos } from '@/hooks/useSidebarRepoGroups'
 import { useUsageRangePreference } from '@/hooks/useUsageRangePreference'
-import { formatStatsRange, hasDailyActivityForBounds } from '@/lib/usageStats'
+import {
+  filterModelUsage,
+  formatStatsRange,
+  hasDailyActivityForBounds,
+  sumModelUsage,
+} from '@/lib/usageStats'
 
 const RECENT_SESSION_SOURCE_LIMIT = 100
 
 export function Usage() {
   const [selection, setSelection] = useUsageRangePreference()
+  const [selectedModels, setSelectedModels] = useState<string[]>([])
   const stats = useSessionStats(selection)
   const { data: sessions } = useSessionsAcrossDirectories([], {
     allDirectories: true,
     limit: RECENT_SESSION_SOURCE_LIMIT,
   })
   const { repos } = useNavigableRepos()
+
+  const modelRefs = useMemo(
+    () => stats.data?.models.map((entry) => formatOpenCodeModelRef(entry.model)) ?? [],
+    [stats.data],
+  )
+  const modelKey = modelRefs.join('|')
+
+  useEffect(() => {
+    const available = new Set(modelKey === '' ? [] : modelKey.split('|'))
+    setSelectedModels((current) => {
+      const next = current.filter((model) => available.has(model))
+      return next.length === current.length ? current : next
+    })
+  }, [modelKey])
+
+  const modelScope = useMemo(() => {
+    if (!stats.data || selectedModels.length === 0) return null
+    const models = filterModelUsage(stats.data.models, selectedModels)
+    return { models, ...sumModelUsage(models) }
+  }, [stats.data, selectedModels])
+
   const hasDailyActivity = hasDailyActivityForBounds(stats.bounds)
 
   return (
@@ -40,6 +71,12 @@ export function Usage() {
         <div className="container mx-auto flex-1 min-h-0 overflow-auto px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+60px)] sm:px-4 sm:pb-6">
           <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
             <UsageRangePicker selection={selection} onChange={setSelection} />
+            <UsageModelFilter
+              models={modelRefs}
+              selected={selectedModels}
+              onChange={setSelectedModels}
+              className="w-full sm:w-72"
+            />
           </div>
           {stats.bounds === null ? (
             <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
@@ -60,14 +97,29 @@ export function Usage() {
               <p className="text-xs text-muted-foreground">
                 {formatStatsRange(stats.data.range)} · aggregated by the OpenCode server
               </p>
-              <UsageSummaryCards stats={stats.data} />
-              <div className={hasDailyActivity ? 'grid gap-3 lg:grid-cols-2' : 'grid gap-3'}>
-                <UsageTokenBreakdown tokens={stats.data.tokens} />
-                {hasDailyActivity && <UsageActivityChart activity={stats.data.activity} />}
-              </div>
-              <UsageModelsTable models={stats.data.models} />
-              <UsageToolsTable tools={stats.data.tools} />
-              <RecentSessionsTable sessions={sessions} repos={repos} />
+              {modelScope ? (
+                <>
+                  <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                    Filtered to {modelScope.models.length} {modelScope.models.length === 1 ? 'model' : 'models'}.
+                    {' '}Spend, tokens, steps and the model table cover only those models. Prompt, streak,
+                    activity and tool reliability cannot be split per model, so they are hidden.
+                  </div>
+                  <UsageModelScopeCards totals={modelScope} modelCount={modelScope.models.length} />
+                  <UsageTokenBreakdown tokens={modelScope.tokens} />
+                  <UsageModelsTable models={modelScope.models} />
+                </>
+              ) : (
+                <>
+                  <UsageSummaryCards stats={stats.data} />
+                  <div className={hasDailyActivity ? 'grid gap-3 lg:grid-cols-2' : 'grid gap-3'}>
+                    <UsageTokenBreakdown tokens={stats.data.tokens} />
+                    {hasDailyActivity && <UsageActivityChart activity={stats.data.activity} />}
+                  </div>
+                  <UsageModelsTable models={stats.data.models} />
+                  <UsageToolsTable tools={stats.data.tools} />
+                  <RecentSessionsTable sessions={sessions} repos={repos} />
+                </>
+              )}
             </div>
           ) : null}
         </div>

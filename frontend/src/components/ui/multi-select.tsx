@@ -15,6 +15,10 @@ interface MultiSelectProps {
   placeholder?: string
   searchPlaceholder?: string
   emptyMessage?: string
+  /** Label for a leading "all" row that clears the selection; checked while nothing is selected. */
+  allLabel?: string
+  /** Accessible name for the trigger, which has no visible label. */
+  ariaLabel?: string
   disabled?: boolean
   className?: string
 }
@@ -26,6 +30,8 @@ export function MultiSelect({
   placeholder = 'Select...',
   searchPlaceholder = 'Search...',
   emptyMessage = 'No options found',
+  allLabel,
+  ariaLabel,
   disabled = false,
   className,
 }: MultiSelectProps) {
@@ -122,6 +128,7 @@ export function MultiSelect({
         role="combobox"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
+        aria-label={ariaLabel}
         aria-activedescendant={isOpen ? `option-${highlightedIndex}` : undefined}
         tabIndex={disabled ? -1 : 0}
         onClick={handleOpen}
@@ -180,6 +187,31 @@ export function MultiSelect({
             />
           </div>
           <div className="max-h-52 overflow-y-auto" role="listbox">
+            {allLabel && (
+              <button
+                type="button"
+                role="option"
+                aria-selected={value.length === 0}
+                onClick={() => {
+                  onChange([])
+                  setSearch('')
+                }}
+                className={cn(
+                  'flex w-full items-center gap-2 border-b border-border px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
+                  value.length === 0 && 'bg-primary/5'
+                )}
+              >
+                <div className={cn(
+                  'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                  value.length === 0 ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
+                )}>
+                  {value.length === 0 && <Check className="h-3 w-3" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate">{allLabel}</div>
+                </div>
+              </button>
+            )}
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-4 text-center text-sm text-muted-foreground">{emptyMessage}</div>
             ) : (

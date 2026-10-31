@@ -98,17 +98,23 @@ function addTool(tools: Map<string, ToolAccumulator>, part: SessionMessageAssist
   tools.set(part.name, entry)
 }
 
+function isSelectedModel(message: SessionMessageAssistant, models?: readonly string[]): boolean {
+  if (!models || models.length === 0) return true
+  return models.includes(formatOpenCodeModelRef(message.model))
+}
+
 /**
  * Aggregates one session's assistant steps into the same shape the server uses for global stats,
  * so the Usage tables and cards render per-session data without a dedicated endpoint. Steps outside
- * the supplied bounds are skipped, which lets the panel show one range of a session.
+ * the supplied bounds, or from other models, are skipped.
  */
 export function summarizeSessionUsage(
   messages: readonly SessionMessageInfo[],
   bounds?: UsageRangeBounds,
+  models?: readonly string[],
 ): SessionUsageSummary {
   const tokens = emptyTokens()
-  const models = new Map<string, SessionStatsModelUsage>()
+  const modelUsage = new Map<string, SessionStatsModelUsage>()
   const tools = new Map<string, ToolAccumulator>()
   let steps = 0
   let cost = 0
@@ -119,6 +125,7 @@ export function summarizeSessionUsage(
   for (const message of messages) {
     if (message.type !== 'assistant') continue
     if (!isWithinBounds(message.time.created, bounds)) continue
+    if (!isSelectedModel(message, models)) continue
     steps += 1
     cost += message.cost ?? 0
     if (message.tokens) {
@@ -131,7 +138,7 @@ export function summarizeSessionUsage(
         streamMs += messageStreamMs
       }
     }
-    addModel(models, message)
+    addModel(modelUsage, message)
     for (const part of message.content) addTool(tools, part)
   }
 
@@ -152,7 +159,21 @@ export function summarizeSessionUsage(
     generated,
     streamMs,
     tokensPerSecond: streamMs > 0 ? streamedGenerated / (streamMs / 1000) : null,
-    models: [...models.values()].sort((left, right) => right.cost - left.cost),
+    models: [...modelUsage.values()].sort((left, right) => right.cost - left.cost),
     tools: { mode: 'detail', totals: toolTotals, usage: toolUsage.sort((left, right) => right.calls - left.calls) },
   }
+}
+
+/** Model references used by the steps inside the range, sorted for a stable picker order. */
+export function sessionModelRefs(
+  messages: readonly SessionMessageInfo[],
+  bounds?: UsageRangeBounds,
+): string[] {
+  const refs = new Set<string>()
+  for (const message of messages) {
+    if (message.type !== 'assistant') continue
+    if (!isWithinBounds(message.time.created, bounds)) continue
+    refs.add(formatOpenCodeModelRef(message.model))
+  }
+  return [...refs].sort()
 }
