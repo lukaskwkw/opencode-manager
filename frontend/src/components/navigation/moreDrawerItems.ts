@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { BookOpen, Plug, Sparkles, ShieldOff, CalendarClock, GitCommitHorizontal, SquareTerminal, Settings, LogOut, Bot, Folder, Home, List, Play, Globe, KeyRound } from 'lucide-react'
+import { BookOpen, Plug, Sparkles, ShieldOff, CalendarClock, GitCommitHorizontal, SquareTerminal, Settings, LogOut, Bot, Folder, Home, List, Play, Globe, KeyRound, BarChart3 } from 'lucide-react'
 import { ASSISTANT_REPO_ID } from '@opencode-manager/shared/utils'
 import { getAssistantPath, isAssistantPath } from '@/lib/navigation'
 
@@ -47,6 +47,10 @@ function getBaseItems(): MoreDrawerItem[] {
   ]
 }
 
+function getUsageItem(): MoreDrawerItem {
+  return { key: 'usage', label: 'Usage', icon: BarChart3, to: '/usage' }
+}
+
 const SESSION_DETAIL_PATH = /^\/repos\/(\d+)\/sessions\/[^/]+$/
 const SERVER_SESSION_DETAIL_PATH = /^\/servers\/[^/]+\/sessions\/[^/]+$/
 const SERVER_PROJECT_PATH = /^\/servers\/[^/]+\/projects$/
@@ -65,6 +69,7 @@ const MANAGER_ONLY_ITEM_KEYS: ReadonlySet<string> = new Set([
   'reset-permissions',
   'schedules',
   'all-schedules',
+  'usage',
 ])
 
 /** True for an item that opens a Manager feature a linked OpenCode server cannot serve. */
@@ -172,6 +177,7 @@ function buildRouteNavModel(pathname: string): NavModel {
       primary: [getAssistantNavItem()],
       items: [
         { key: 'all-schedules', label: 'All Schedules', icon: CalendarClock, to: '/schedules' },
+        getUsageItem(),
         { key: 'files', label: 'Files', icon: Folder, dialog: 'files' },
         ...baseItems,
       ],
@@ -180,7 +186,7 @@ function buildRouteNavModel(pathname: string): NavModel {
 
   return {
     primary: [getAssistantNavItem()],
-    items: baseItems,
+    items: [getUsageItem(), ...baseItems],
   }
 }
 

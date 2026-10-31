@@ -11,6 +11,7 @@ import { RemoteProject } from './pages/RemoteProject'
 import { SessionDetail } from './pages/SessionDetail'
 import { Schedules } from './pages/Schedules'
 import { GlobalSchedules } from './pages/GlobalSchedules'
+import { Usage } from './pages/Usage'
 import { Login } from './pages/Login'
 import { Pair } from './pages/Pair'
 import { Register } from './pages/Register'
@@ -349,6 +350,11 @@ const router = createBrowserRouter([
           {
             path: '/schedules',
             element: <GlobalSchedules />,
+            loader: protectedLoader,
+          },
+          {
+            path: '/usage',
+            element: <Usage />,
             loader: protectedLoader,
           },
           {

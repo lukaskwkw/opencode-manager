@@ -2,14 +2,16 @@ import { describe, it, expect } from 'vitest'
 import { buildMoreItems, buildNavModel, buildToolItems } from './moreDrawerItems'
 
 describe('buildMoreItems', () => {
-  it('returns Home + All Schedules + Files + Settings + Logout for root path', () => {
+  it('returns Home + All Schedules + Usage + Files + Settings + Logout for root path', () => {
     const items = buildMoreItems('/')
-    expect(items).toHaveLength(5)
+    expect(items).toHaveLength(6)
     expect(items[0].key).toBe('home')
     expect(items[1].key).toBe('all-schedules')
-    expect(items[2].key).toBe('files')
-    expect(items[3].key).toBe('settings')
-    expect(items[4].key).toBe('logout')
+    expect(items[2].key).toBe('usage')
+    expect(items[2].to).toBe('/usage')
+    expect(items[3].key).toBe('files')
+    expect(items[4].key).toBe('settings')
+    expect(items[5].key).toBe('logout')
   })
 
   it('returns repo-specific items for /repos/:id', () => {
@@ -122,28 +124,31 @@ describe('buildMoreItems', () => {
     expect(items[10].key).toBe('logout')
   })
 
-  it('returns only Home + Settings + Logout for /schedules', () => {
+  it('returns Home + Usage + Settings + Logout for /schedules', () => {
     const items = buildMoreItems('/schedules')
-    expect(items).toHaveLength(3)
+    expect(items).toHaveLength(4)
     expect(items[0].key).toBe('home')
-    expect(items[1].key).toBe('settings')
-    expect(items[2].key).toBe('logout')
+    expect(items[1].key).toBe('usage')
+    expect(items[2].key).toBe('settings')
+    expect(items[3].key).toBe('logout')
   })
 
-  it('returns only Home + Settings + Logout for /repos/:id/schedules', () => {
+  it('returns Home + Usage + Settings + Logout for /repos/:id/schedules', () => {
     const items = buildMoreItems('/repos/42/schedules')
-    expect(items).toHaveLength(3)
+    expect(items).toHaveLength(4)
     expect(items[0].key).toBe('home')
-    expect(items[1].key).toBe('settings')
-    expect(items[2].key).toBe('logout')
+    expect(items[1].key).toBe('usage')
+    expect(items[2].key).toBe('settings')
+    expect(items[3].key).toBe('logout')
   })
 
-  it('returns only Home + Settings + Logout for unknown paths', () => {
+  it('returns Home + Usage + Settings + Logout for unknown paths', () => {
     const items = buildMoreItems('/unknown/path')
-    expect(items).toHaveLength(3)
+    expect(items).toHaveLength(4)
     expect(items[0].key).toBe('home')
-    expect(items[1].key).toBe('settings')
-    expect(items[2].key).toBe('logout')
+    expect(items[1].key).toBe('usage')
+    expect(items[2].key).toBe('settings')
+    expect(items[3].key).toBe('logout')
   })
 
   it('leads every route with a Home item routed to /', () => {
@@ -214,7 +219,12 @@ describe('buildToolItems', () => {
   })
 
   it('returns the home route tools', () => {
-    expect(buildToolItems('/').map((item) => item.key)).toEqual(['sessions', 'all-schedules', 'files'])
+    expect(buildToolItems('/').map((item) => item.key)).toEqual([
+      'sessions',
+      'all-schedules',
+      'usage',
+      'files',
+    ])
   })
 
   it.each(['/repos/42', '/assistant'])('opens schedules in the panel on %s', (path) => {
@@ -227,8 +237,8 @@ describe('buildToolItems', () => {
     expect(secrets?.panelTool).toBeUndefined()
   })
 
-  it.each(['/schedules', '/repos/42/schedules'])('returns only the Sessions tool on %s', (path) => {
-    expect(buildToolItems(path).map((item) => item.key)).toEqual(['sessions'])
+  it.each(['/schedules', '/repos/42/schedules'])('returns only the Sessions and Usage tools on %s', (path) => {
+    expect(buildToolItems(path).map((item) => item.key)).toEqual(['sessions', 'usage'])
   })
 })
 

@@ -31,6 +31,14 @@ import { ExplorationGroup } from './ExplorationGroup'
 import { useInterruptedToolIDs } from '@/hooks/useInterruptedToolIDs'
 import { ShellPreview, ToolDetails, useToolDetailsState } from './ToolDetails'
 import { cn, formatDuration } from '@/lib/utils'
+import { formatCompactTokens } from '@/lib/contextUsage'
+import {
+  assistantStreamMs,
+  assistantTokenUsage,
+  assistantTokensPerSecond,
+  formatTokensPerSecond,
+  formatUsageTooltip,
+} from '@/lib/messageUsage'
 import { getAgentStyleVars } from '@/lib/agent-colors'
 
 function getMessageText(message: SessionMessageInfo): string {
@@ -511,9 +519,11 @@ const MessageRow = memo(function MessageRow({
       ? groupExplorationParts(message.content, showReasoning)
       : message.content.map((part) => ({ type: 'part', part }))
     const isFree = (message.cost ?? 0) === 0
-    const totalTokens = message.tokens
-      ? message.tokens.input + message.tokens.output + message.tokens.reasoning + message.tokens.cache.read
-      : 0
+    const tokenUsage = assistantTokenUsage(message.tokens)
+    const streamMs = assistantStreamMs(message.time)
+    const tokensPerSecond = assistantTokensPerSecond(message.tokens, message.time)
+    const totalTokens = tokenUsage?.total ?? 0
+    const hasUsage = !isFree || totalTokens > 0
 
     return (
       <div
@@ -588,10 +598,19 @@ const MessageRow = memo(function MessageRow({
               <span className="animate-pulse-subtle text-info">streaming</span>
             </>
           ) : null}
-          {!(isFree) && (
+          {hasUsage && (
             <>
               <span aria-hidden="true">·</span>
-              <span>${(message.cost ?? 0).toFixed(4)} • {totalTokens} tokens</span>
+              <span
+                className="flex items-center gap-x-2"
+                title={tokenUsage ? formatUsageTooltip(tokenUsage, streamMs) : undefined}
+              >
+                {!isFree && <span>${(message.cost ?? 0).toFixed(4)}</span>}
+                {tokensPerSecond !== null && (
+                  <span>{formatTokensPerSecond(tokensPerSecond)} tok/s</span>
+                )}
+                {tokenUsage && <span>{formatCompactTokens(totalTokens)} tokens</span>}
+              </span>
             </>
           )}
           <span className="flex items-center gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
