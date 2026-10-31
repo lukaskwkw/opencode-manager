@@ -7,6 +7,7 @@ import { useModelSelection } from '@/hooks/useModelSelection'
 import { useVariants } from '@/hooks/useVariants'
 import { useSessionAgent } from '@/hooks/useSessionAgent'
 import { useSttAvailability } from '@/hooks/useSTT'
+import { useSettings } from '@/hooks/useSettings'
 
 import { useUserBash } from '@/stores/userBashStore'
 import { useSessionAgentStore } from '@/stores/sessionAgentStore'
@@ -176,6 +177,8 @@ export const PromptInput = memo(forwardRef<PromptInputHandle, PromptInputProps>(
   const imageAttachmentsRef = useRef(imageAttachments)
 
   const sttAvailability = useSttAvailability()
+  const { preferences } = useSettings()
+  const dictateOnly = preferences?.stt?.autoSend === false
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1154,8 +1157,8 @@ if (isIOS && isSecureContext && navigator.clipboard && navigator.clipboard.read)
   const renderVoiceMic = () => (
     <button
       type="button"
-      aria-label="Start voice conversation"
-      title="Start voice conversation"
+      aria-label={dictateOnly ? 'Start dictation' : 'Start voice conversation'}
+      title={dictateOnly ? 'Start dictation' : 'Start voice conversation'}
       onMouseDown={(event) => event.preventDefault()}
       onClick={() => {
         textareaRef.current?.blur()
@@ -1248,6 +1251,7 @@ return (
         sendTurn={sendVoiceTurn}
         interrupt={interruptTurn}
         onEditInTextBox={handleVoiceEditInTextBox}
+        dictateOnly={dictateOnly}
         onViewApproval={handleViewApproval}
         onActiveChange={handleVoiceActiveChange}
       />

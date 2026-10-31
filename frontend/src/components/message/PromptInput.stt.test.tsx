@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => ({
   useUserBash: vi.fn(),
   useSessionAgentStore: vi.fn(),
   useSendErrorStore: vi.fn(),
+  useSettings: vi.fn(),
 }))
 
 vi.mock('@/hooks/useSTT', () => ({
@@ -47,6 +48,10 @@ vi.mock('@/hooks/useVoiceConversation', () => ({
 
 vi.mock('@/hooks/useMobile', () => ({
   useMobile: mocks.useMobile,
+}))
+
+vi.mock('@/hooks/useSettings', () => ({
+  useSettings: mocks.useSettings,
 }))
 
 vi.mock('@/hooks/useOpenCode', () => ({
@@ -227,6 +232,7 @@ describe('PromptInput voice conversation', () => {
     mocks.useMobile.mockReturnValue(true)
     mocks.useSttAvailability.mockReturnValue({ isEnabled: true, isSupported: true })
     setVoiceController()
+    mocks.useSettings.mockReturnValue({ preferences: undefined })
     mocks.useUserBash.mockImplementation((selector) => selector({ addUserBashCommand: vi.fn() }))
     mocks.useSessionAgentStore.mockImplementation((selector) => selector({ setAgent: mockSetAgent }))
     mocks.useSendErrorStore.mockImplementation((selector) => selector({ errors: {} }))
@@ -273,6 +279,15 @@ describe('PromptInput voice conversation', () => {
       fireEvent.click(voiceMic() as HTMLElement)
 
       expect(controller.start).toHaveBeenCalledTimes(1)
+    })
+
+    it('labels the microphone for dictation when auto-send is off', () => {
+      mocks.useSettings.mockReturnValue({ preferences: { stt: { autoSend: false } } })
+
+      renderComponent()
+
+      expect(screen.getByRole('button', { name: 'Start dictation' })).toBeInTheDocument()
+      expect(voiceMic()).toBeNull()
     })
   })
 
@@ -427,6 +442,7 @@ describe('PromptInput submission', () => {
     mocks.useMobile.mockReturnValue(true)
     mocks.useSttAvailability.mockReturnValue({ isEnabled: true, isSupported: true })
     mocks.useVoiceConversation.mockReturnValue(createVoiceConversationControllerMock())
+    mocks.useSettings.mockReturnValue({ preferences: undefined })
     mocks.useUserBash.mockImplementation((selector) => selector({ addUserBashCommand: vi.fn() }))
     mocks.useSessionAgentStore.mockImplementation((selector) => selector({ setAgent: vi.fn() }))
     mocks.useSendErrorStore.mockImplementation((selector) => selector({ errors: {} }))

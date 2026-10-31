@@ -34,6 +34,7 @@ export const STTConfigSchema = z.object({
   apiKey: z.string(),
   model: z.string(),
   language: z.string().default('en-US'),
+  autoSend: z.boolean().default(true),
   availableModels: z.array(z.string()).optional(),
   lastModelsFetch: z.number().optional(),
 });
@@ -60,6 +61,7 @@ export type STTConfig = {
   apiKey: string;
   model: string;
   language: string;
+  autoSend: boolean;
   availableModels?: string[];
   lastModelsFetch?: number;
 };
@@ -268,6 +270,7 @@ export const DEFAULT_STT_CONFIG: STTConfig = {
   apiKey: "",
   model: '',
   language: 'en-US',
+  autoSend: true,
   availableModels: [],
   lastModelsFetch: 0,
 };

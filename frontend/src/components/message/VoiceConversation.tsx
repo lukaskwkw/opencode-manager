@@ -23,6 +23,11 @@ export interface VoiceConversationProps {
   interrupt: UseVoiceConversationInput['interrupt']
   /** Hands a captured transcript to the composer for editing. */
   onEditInTextBox: UseVoiceConversationInput['onEditInTextBox']
+  /**
+   * Whether voice mode inserts the transcript into the composer instead of
+   * sending it.
+   */
+  dictateOnly: boolean
   /** Opens the pending approval dialog. */
   onViewApproval: () => void
   /** Reports whether voice mode is running, including while paused. */
@@ -45,6 +50,7 @@ export const VoiceConversation = forwardRef<VoiceConversationHandle, VoiceConver
     sendTurn,
     interrupt,
     onEditInTextBox,
+    dictateOnly,
     onViewApproval,
     onActiveChange,
   }, ref) {
@@ -61,6 +67,7 @@ export const VoiceConversation = forwardRef<VoiceConversationHandle, VoiceConver
       sendTurn,
       interrupt,
       onEditInTextBox,
+      dictateOnly,
     })
 
     useImperativeHandle(ref, () => ({ start: controller.start }), [controller.start])

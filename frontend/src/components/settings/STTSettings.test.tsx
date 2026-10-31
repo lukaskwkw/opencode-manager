@@ -140,6 +140,59 @@ describe('STTSettings external language', () => {
   })
 })
 
+describe('STTSettings auto send', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    window.localStorage.clear()
+  })
+
+  function buildPreferencesWithoutAutoSend(): UserPreferences {
+    return {
+      ...DEFAULT_USER_PREFERENCES,
+      stt: {
+        enabled: true,
+        provider: 'builtin',
+        endpoint: DEFAULT_STT_CONFIG.endpoint,
+        apiKey: DEFAULT_STT_CONFIG.apiKey,
+        model: DEFAULT_STT_CONFIG.model,
+        language: DEFAULT_STT_CONFIG.language,
+        availableModels: [],
+        lastModelsFetch: 0,
+      } as STTConfig,
+    }
+  }
+
+  it('renders the send automatically switch turned on when the payload has no autoSend', async () => {
+    mockHooks(buildPreferencesWithoutAutoSend())
+    await renderSettings()
+
+    expect(screen.getByRole('switch', { name: 'Send automatically' })).toBeChecked()
+  })
+
+  it('renders the send automatically switch turned off when the payload has autoSend false', async () => {
+    mockHooks(buildPreferences({ enabled: true, provider: 'builtin', autoSend: false }))
+    await renderSettings()
+
+    expect(screen.getByRole('switch', { name: 'Send automatically' })).not.toBeChecked()
+  })
+
+  it('persists autoSend off through the autosave updateSettings call', async () => {
+    const user = userEvent.setup()
+    const settings = mockHooks(buildPreferences({ enabled: true, provider: 'builtin' }))
+    await renderSettings()
+
+    await user.click(screen.getByRole('switch', { name: 'Send automatically' }))
+
+    await waitFor(
+      () =>
+        expect(settings.updateSettings).toHaveBeenCalledWith(
+          expect.objectContaining({ stt: expect.objectContaining({ autoSend: false }) }),
+        ),
+      { timeout: 3000 },
+    )
+  })
+})
+
 describe('normalizeBuiltinLanguage', () => {
   it('maps the stored auto value to the browser default', () => {
     expect(normalizeBuiltinLanguage('auto', ['en-US', 'pl-PL'])).toBe('en-US')

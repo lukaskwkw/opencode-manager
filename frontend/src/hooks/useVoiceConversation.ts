@@ -54,6 +54,11 @@ export interface UseVoiceConversationInput {
   interrupt: () => Promise<void>
   /** Hands a captured transcript to the composer for editing. */
   onEditInTextBox: (text: string) => void
+  /**
+   * When true, a finished transcript is handed to the composer instead of being
+   * sent to the session.
+   */
+  dictateOnly?: boolean
 }
 
 /** The state, status and controls a voice conversation view renders. */
@@ -104,6 +109,7 @@ interface VoiceConversationLatest {
   sendTurn: (text: string, options: { busy: boolean }) => Promise<void>
   interrupt: () => Promise<void>
   onEditInTextBox: (text: string) => void
+  dictateOnly: boolean
   tts: ReturnType<typeof useTTS>
 }
 
@@ -291,6 +297,7 @@ export function useVoiceConversation(
     sendTurn,
     interrupt,
     onEditInTextBox,
+    dictateOnly = false,
   } = input
   const tts = useTTS()
   const stt = useSTT()
@@ -325,6 +332,7 @@ export function useVoiceConversation(
   const endRecordingRef = useRef<((finalText?: string) => Promise<void>) | null>(null)
   const captureSettleRef = useRef<Array<() => void>>([])
   const exitInFlightRef = useRef(false)
+  const performExitRef = useRef<((draftText: string) => void) | null>(null)
   const speakTokenRef = useRef(0)
   const sttRef = useRef<ReturnType<typeof useSTT> | null>(null)
   const latestRef = useRef<VoiceConversationLatest>({
@@ -335,6 +343,7 @@ export function useVoiceConversation(
     sendTurn,
     interrupt,
     onEditInTextBox,
+    dictateOnly,
     tts,
   })
 
@@ -366,6 +375,7 @@ export function useVoiceConversation(
       sendTurn,
       interrupt,
       onEditInTextBox,
+      dictateOnly,
       tts,
     }
     sttRef.current = stt
@@ -457,8 +467,12 @@ export function useVoiceConversation(
         dispatch({ type: 'transcript', text })
         if (!text) return
         const latest = latestRef.current
-        const baselineId = latestMessageBaseline(latest.messages)
         fireImpactHaptic()
+        if (latest.dictateOnly) {
+          performExitRef.current?.(text)
+          return
+        }
+        const baselineId = latestMessageBaseline(latest.messages)
         try {
           await latest.sendTurn(text, { busy: latest.status !== 'idle' })
         } catch (error) {
@@ -492,6 +506,10 @@ export function useVoiceConversation(
         if (!text) return
         const latest = latestRef.current
         fireImpactHaptic()
+        if (latest.dictateOnly) {
+          performExitRef.current?.(text)
+          return
+        }
         try {
           await latest.sendTurn(text, { busy: latest.status !== 'idle' })
         } catch (error) {
@@ -686,12 +704,14 @@ export function useVoiceConversation(
   ])
 
   useEffect(() => {
+    if (dictateOnly) return
     if (state.phase !== 'listening' || status === 'idle') return
     if (stt.isExternalProvider && (stt.isRecording || stt.isProcessing)) return
     if (turnTextValue || interimText) return
     sttRef.current?.abortRecording()
     dispatch({ type: 'turn-started', baselineId: currentTurnBaseline(messages) })
   }, [
+    dictateOnly,
     state.phase,
     status,
     interimText,
@@ -721,15 +741,17 @@ export function useVoiceConversation(
     setNotice(null)
     dispatch({
       type: 'start',
-      busy: latest.status !== 'idle',
+      busy: latest.dictateOnly ? false : latest.status !== 'idle',
       baselineId: currentTurnBaseline(latest.messages),
     })
-    instructionPutRef.current = putSessionInstruction(
-      latest.sessionID,
-      VOICE_MODE_INSTRUCTION_KEY,
-      VOICE_MODE_INSTRUCTIONS,
-      latest.serverId,
-    ).catch(() => setNotice(VOICE_INSTRUCTIONS_NOTICE))
+    instructionPutRef.current = latest.dictateOnly
+      ? null
+      : putSessionInstruction(
+          latest.sessionID,
+          VOICE_MODE_INSTRUCTION_KEY,
+          VOICE_MODE_INSTRUCTIONS,
+          latest.serverId,
+        ).catch(() => setNotice(VOICE_INSTRUCTIONS_NOTICE))
   }, [canStart, invalidateTurn])
 
   const requestPause = useCallback(
@@ -800,6 +822,10 @@ export function useVoiceConversation(
     },
     [invalidateTurn, setHeldPlayback],
   )
+
+  useEffect(() => {
+    performExitRef.current = performExit
+  }, [performExit])
 
   const readCapturedText = useCallback((): string => {
     const current = sttRef.current
@@ -984,7 +1010,7 @@ export function useVoiceConversation(
     isStartingCapture: isCapturing && stt.isStarting,
   }
   const label = voiceConversationLabel(textInput)
-  const hint = voiceConversationHint(textInput)
+  const hint = dictateOnly && isCapturing ? 'Tap to finish' : voiceConversationHint(textInput)
   const liveTranscript = isCapturing ? interimText || turnTextValue : ''
   const canEditInTextBox = isCapturing && (interimText !== '' || turnTextValue !== '')
   const canStopAgent = isActive && status !== 'idle'

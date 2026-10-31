@@ -23,6 +23,7 @@ const sttFormSchema = z.object({
   apiKey: z.string(),
   model: z.string(),
   language: z.string(),
+  autoSend: z.boolean(),
 }).superRefine((data, ctx) => {
   if (!data.enabled) return
 
@@ -72,6 +73,7 @@ export function STTSettings() {
   const availableLanguages = getAvailableLanguages()
 
   const watchEnabled = form.watch('enabled')
+  const watchAutoSend = form.watch('autoSend')
   const watchProvider = form.watch('provider')
   const watchLanguage = form.watch('language')
   const watchEndpoint = form.watch('endpoint')
@@ -160,6 +162,7 @@ export function STTSettings() {
         apiKey: sttPrefs.apiKey ?? DEFAULT_STT_CONFIG.apiKey,
         model: sttPrefs.model ?? 'whisper-1',
         language: sttPrefs.language ?? DEFAULT_STT_CONFIG.language,
+        autoSend: sttPrefs.autoSend ?? DEFAULT_STT_CONFIG.autoSend,
       })
 
       if (sttPrefs.availableModels && sttPrefs.availableModels.length > 0) {
@@ -180,7 +183,7 @@ export function STTSettings() {
     }, 800)
 
     return () => clearTimeout(timer)
-  }, [watchEnabled, watchProvider, watchLanguage, watchEndpoint, watchApiKey, watchModel, isDirty, isValid, getValues, updateSettings])
+  }, [watchEnabled, watchAutoSend, watchProvider, watchLanguage, watchEndpoint, watchApiKey, watchModel, isDirty, isValid, getValues, updateSettings])
 
   const canTestBuiltin = watchEnabled && watchProvider === 'builtin' && isWebSpeechAvailable
   const canTestExternal = watchEnabled && watchProvider === 'external' && watchEndpoint
@@ -233,6 +236,27 @@ export function STTSettings() {
 
           {watchEnabled && (
             <>
+              <FormField
+                control={form.control}
+                name="autoSend"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Send automatically</FormLabel>
+                      <FormDescription>
+                        On: the transcript is sent to the agent as soon as speech ends. Off: the transcript is added to the message box so you can edit it and press Send yourself.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="provider"
@@ -421,7 +445,9 @@ export function STTSettings() {
                       ariaLabel="Pause before sending"
                     />
                     <p className="text-sm text-muted-foreground">
-                      Voice conversation sends after this much silence. Uses your browser's speech recognition; other providers send when you tap.
+                      {watchAutoSend
+                        ? "Voice conversation sends after this much silence. Uses your browser's speech recognition; other providers send when you tap."
+                        : "Dictation inserts the text into the message box after this much silence. Uses your browser's speech recognition; other providers insert when you tap."}
                     </p>
                   </FormItem>
                 </>

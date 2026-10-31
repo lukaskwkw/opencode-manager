@@ -231,6 +231,34 @@ describe('useVoiceConversation', () => {
     expect(result.current.label).toBe('Working')
   })
 
+  it('hands a finished transcript to the composer and exits in dictation mode', async () => {
+    const { result } = renderHook((props: UseVoiceConversationInput) => useVoiceConversation(props), {
+      initialProps: createProps({ dictateOnly: true }),
+    })
+
+    act(() => result.current.start())
+    await waitFor(() => expect(result.current.phase).toBe('listening'))
+    expect(result.current.hint).toBe('Tap to finish')
+
+    await endOfSpeech('pause', 'dictated words')
+
+    expect(harness.onEditInTextBox).toHaveBeenCalledWith('dictated words')
+    expect(harness.sendTurn).not.toHaveBeenCalled()
+    await waitFor(() => expect(result.current.isActive).toBe(false))
+    expect(result.current.phase).toBe('off')
+  })
+
+  it('leaves the session instruction alone in dictation mode', async () => {
+    const { result } = renderHook((props: UseVoiceConversationInput) => useVoiceConversation(props), {
+      initialProps: createProps({ dictateOnly: true, status: 'busy' }),
+    })
+
+    act(() => result.current.start())
+    await waitFor(() => expect(result.current.phase).toBe('listening'))
+
+    expect(harness.putSessionInstruction).not.toHaveBeenCalled()
+  })
+
   it('reads a completed reply and listens again once it ends', async () => {
     const { result, rerender } = renderHook(
       (props: UseVoiceConversationInput) => useVoiceConversation(props),
