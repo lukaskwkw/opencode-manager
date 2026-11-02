@@ -241,6 +241,28 @@ describe('DesktopSidebar', () => {
     expect(screen.getByTestId('location').textContent).toBe('/?dialog=files&settings=open&settingsTab=account')
   })
 
+  it('opens the global usage panel by updating the usage query param', () => {
+    vi.spyOn(useDesktopModule, 'useDesktop').mockReturnValue(true)
+    vi.spyOn(useSidebarCollapsedModule, 'useSidebarCollapsed').mockReturnValue([false, vi.fn()])
+    vi.spyOn(useAuthModule, 'useAuth').mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+      logout: vi.fn(),
+    } as any)
+
+    render(
+      <>
+        <DesktopSidebar />
+        <LocationDisplay />
+      </>,
+      { wrapper: createWrapper(['/repos/5?repoTab=workspaces']) }
+    )
+
+    fireEvent.click(screen.getByText('Usage'))
+
+    expect(screen.getByTestId('location').textContent).toBe('/repos/5?repoTab=workspaces&usage=open')
+  })
+
   it('renders the session tree with home and account items in the footer', () => {
     vi.spyOn(useDesktopModule, 'useDesktop').mockReturnValue(true)
     vi.spyOn(useSidebarCollapsedModule, 'useSidebarCollapsed').mockReturnValue([false, vi.fn()])

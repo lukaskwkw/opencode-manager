@@ -135,6 +135,12 @@ export function MoreDrawer({ isOpen, onClose }: MoreDrawerProps) {
         ? getPathWithReturnTo(item.to, `${location.pathname}${location.search}`)
         : item.to
       navigate(to)
+    } else if (item.queryParam) {
+      const { key, value } = item.queryParam
+      updateParams((p) => {
+        p.set(key, value)
+        p.delete('mobileTab')
+      }, 'replace')
     } else if (item.dialog) {
       updateParams((p) => {
         p.set('dialog', item.dialog!)

@@ -354,6 +354,21 @@ describe('MoreDrawer', () => {
     )
   })
 
+  it('opens the global usage panel from the menu', () => {
+    const navigateMock = vi.fn()
+    vi.mocked(useNavigate).mockReturnValue(navigateMock)
+    mockAuth()
+    mockServerHealth()
+    renderMoreDrawer({ initialEntry: '/repos/1/sessions/session-1?mobileTab=more', routePath: '/repos/:id/sessions/:sessionId' })
+
+    fireEvent.click(screen.getAllByText('Usage')[0])
+
+    expect(navigateMock).toHaveBeenCalledWith(
+      { search: 'usage=open' },
+      { replace: true },
+    )
+  })
+
   it('keeps Home and hides the Sessions row outside a session', () => {
     mockAuth()
     mockServerHealth()

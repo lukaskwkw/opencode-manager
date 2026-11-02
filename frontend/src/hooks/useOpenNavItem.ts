@@ -18,6 +18,14 @@ export function useOpenNavItem(): (item: MoreDrawerItem) => boolean {
         : item.to)
       return true
     }
+    if (item.queryParam) {
+      const { key, value } = item.queryParam
+      updateParams((p) => {
+        p.set(key, value)
+        p.delete('mobileTab')
+      }, 'push')
+      return true
+    }
     if (item.dialog) {
       openDialogParam(updateParams, item.dialog)
       return true

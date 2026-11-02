@@ -7,7 +7,7 @@ describe('buildMoreItems', () => {
     expect(items).toHaveLength(6)
     expect(items[0].key).toBe('home')
     expect(items[1].key).toBe('usage')
-    expect(items[1].to).toBe('/usage')
+    expect(items[1].queryParam).toEqual({ key: 'usage', value: 'open' })
     expect(items[2].key).toBe('all-schedules')
     expect(items[3].key).toBe('files')
     expect(items[4].key).toBe('settings')
@@ -289,9 +289,12 @@ describe('buildNavModel', () => {
     expect(usage?.panelTool).toBe('usage')
   })
 
-  it('offers the usage route on every manager route', () => {
+  it('offers the usage panel on every manager route', () => {
     for (const path of ['/', '/repos/5', '/repos/5/sessions/abc', '/assistant', '/schedules']) {
-      expect(buildMoreItems(path).find((item) => item.key === 'usage')?.to).toBe('/usage')
+      expect(buildMoreItems(path).find((item) => item.key === 'usage')?.queryParam).toEqual({
+        key: 'usage',
+        value: 'open',
+      })
     }
   })
 })

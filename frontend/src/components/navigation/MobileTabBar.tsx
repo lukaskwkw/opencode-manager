@@ -60,7 +60,7 @@ function getMobileTabRouteState(pathname: string, search: string): MobileTabRout
     return { mode: 'global', isInsideRepo: false, repoId: null, serverScope: null }
   }
 
-  if (pathname === '/' || pathname === '/schedules' || pathname === '/usage') {
+  if (pathname === '/' || pathname === '/schedules') {
     return { mode: 'global', isInsideRepo: false, repoId: null, serverScope: null }
   }
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
-import { BarChart3 } from 'lucide-react'
+import { BarChart3, X } from 'lucide-react'
 import { formatOpenCodeModelRef } from '@opencode-manager/shared/opencode'
+import { Button } from '@/components/ui/button'
 import { Header } from '@/components/ui/header'
 import { ErrorBanner } from '@/components/ui/error-banner'
 import { ActivitySpinner } from '@/components/ui/activity-spinner'
@@ -29,7 +30,8 @@ import {
 
 const RECENT_SESSION_SOURCE_LIMIT = 100
 
-export function Usage() {
+/** Global usage dashboard, rendered in a full-screen panel from the usage dialog. */
+export function UsageDashboard({ onClose }: { onClose?: () => void }) {
   const [selection, setSelection] = useUsageRangePreference()
   const [selectedModels, setSelectedModels] = useUsageModelsPreference()
   const stats = useSessionStats(selection)
@@ -76,6 +78,19 @@ export function Usage() {
             <BarChart3 className="h-5 w-5 shrink-0 text-muted-foreground" />
             <Header.Title>Usage</Header.Title>
           </div>
+          {onClose ? (
+            <Header.Actions>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                aria-label="Close"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </Header.Actions>
+          ) : null}
         </Header>
 
         <div className="container mx-auto flex-1 min-h-0 overflow-auto px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+60px)] sm:px-4 sm:pb-6">

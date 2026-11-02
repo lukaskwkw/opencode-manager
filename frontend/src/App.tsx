@@ -11,13 +11,13 @@ import { RemoteProject } from './pages/RemoteProject'
 import { SessionDetail } from './pages/SessionDetail'
 import { Schedules } from './pages/Schedules'
 import { GlobalSchedules } from './pages/GlobalSchedules'
-import { Usage } from './pages/Usage'
 import { Login } from './pages/Login'
 import { Pair } from './pages/Pair'
 import { Register } from './pages/Register'
 import { Setup } from './pages/Setup'
 import { AssistantRedirect } from './pages/AssistantRedirect'
 import { SettingsDialog } from './components/settings/SettingsDialog'
+import { UsageDialog } from './components/usage/UsageDialog'
 import { VersionNotifier } from './components/VersionNotifier'
 import { PwaUpdatePrompt } from '@/components/PwaUpdatePrompt'
 import { MobileTabBar } from '@/components/navigation/MobileTabBar'
@@ -281,6 +281,7 @@ export function AppShell() {
           <PermissionDialogWrapper />
           <SSHHostKeyDialogWrapper />
           <SettingsDialog />
+          <UsageDialog />
           <HealthMonitor />
           <VersionNotifier />
         </KeyboardShortcutsProvider>
@@ -350,11 +351,6 @@ const router = createBrowserRouter([
           {
             path: '/schedules',
             element: <GlobalSchedules />,
-            loader: protectedLoader,
-          },
-          {
-            path: '/usage',
-            element: <Usage />,
             loader: protectedLoader,
           },
           {

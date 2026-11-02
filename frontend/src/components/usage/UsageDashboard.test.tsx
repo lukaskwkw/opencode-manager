@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import type { SessionStatsInfo } from '@opencode-manager/shared/opencode'
 import type { SessionInfo } from '@opencode-manager/shared/opencode'
 import type { Repo } from '@/api/types'
-import { Usage } from '../Usage'
+import { UsageDashboard } from './UsageDashboard'
 
 const mocks = vi.hoisted(() => ({
   useSessionStats: vi.fn(),
@@ -101,7 +101,7 @@ function makeAssistantStep() {
 function renderUsage() {
   return render(
     <MemoryRouter>
-      <Usage />
+      <UsageDashboard />
     </MemoryRouter>,
   )
 }
@@ -122,7 +122,7 @@ beforeEach(() => {
   ])
 })
 
-describe('Usage', () => {
+describe('UsageDashboard', () => {
   it('shows the aggregated range metrics', () => {
     mocks.useSessionStats.mockReturnValue({
       isPending: false,
@@ -271,5 +271,20 @@ describe('Usage', () => {
     renderUsage()
 
     expect(screen.getByText('Choose a start and end time to see usage for a custom range.')).toBeTruthy()
+  })
+
+  it('closes the panel from its header', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+
+    render(
+      <MemoryRouter>
+        <UsageDashboard onClose={onClose} />
+      </MemoryRouter>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

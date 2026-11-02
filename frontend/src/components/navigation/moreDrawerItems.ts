@@ -10,6 +10,8 @@ export interface MoreDrawerItem {
   to?: string
   dialog?: string
   panelTool?: string
+  /** Query parameter to set when opening a dialog-style item, e.g. `usage=open`. */
+  queryParam?: { key: string; value: string }
   danger?: boolean
 }
 
@@ -48,7 +50,7 @@ function getBaseItems(): MoreDrawerItem[] {
 }
 
 function getUsageItem(): MoreDrawerItem {
-  return { key: 'usage', label: 'Usage', icon: BarChart3, to: '/usage' }
+  return { key: 'usage', label: 'Usage', icon: BarChart3, queryParam: { key: 'usage', value: 'open' } }
 }
 
 const SESSION_DETAIL_PATH = /^\/repos\/(\d+)\/sessions\/[^/]+$/
