@@ -9,7 +9,7 @@ export interface UsageRangeSelection {
 }
 
 export const DEFAULT_USAGE_RANGE_SELECTION: UsageRangeSelection = {
-  range: '30d',
+  range: '4h',
   from: null,
   to: null,
 }

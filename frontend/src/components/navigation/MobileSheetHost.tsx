@@ -4,6 +4,7 @@ import { FileBrowserSheet } from '@/components/file-browser/FileBrowserSheet'
 import { SessionPickerSheet } from '@/components/session/SessionPickerSheet'
 import { NotificationsSheet } from '@/components/navigation/NotificationsSheet'
 import { MoreDrawer } from '@/components/navigation/MoreDrawer'
+import { SessionUsageSheet } from '@/components/usage/SessionUsageSheet'
 import { isLocalOpenCodeServer, useRouteOpenCodeServerId } from '@/contexts/OpenCodeServerContext'
 
 export function MobileSheetHost() {
@@ -26,6 +27,7 @@ export function MobileSheetHost() {
         />
       )}
       {openSheet === 'notifications' && <NotificationsSheet isOpen onClose={close} />}
+      {openSheet === 'usage' && <SessionUsageSheet isOpen onClose={close} />}
       <MoreDrawer isOpen={openSheet === 'more'} onClose={close} />
     </>
   )

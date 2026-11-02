@@ -1393,6 +1393,13 @@ return (
           >
             <Upload className="w-5 h-5" />
           </button>
+          {isMobile && (
+            <SimpleChatModeToggle
+              compact
+              simpleChatMode={simpleChatMode}
+              onChange={(next) => updateSettings({ simpleChatMode: next })}
+            />
+          )}
           {showVoiceMic && renderVoiceMic()}
           {isMobile && directory && (
             <ComposerToolsMenu
@@ -1403,8 +1410,6 @@ return (
               goalLabel={goalButtonLabel}
               onToggleGoal={toggleGoalArmed}
               onAttachFile={openFilePicker}
-              simpleChatMode={simpleChatMode}
-              onToggleSimpleChat={() => updateSettings({ simpleChatMode: !simpleChatMode })}
             />
           )}
         </div>

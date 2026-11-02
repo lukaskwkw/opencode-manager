@@ -1,8 +1,12 @@
+import { MessagesSquare } from 'lucide-react'
+import { getIconToggleButtonClassName } from '@/components/ui/icon-toggle-button'
 import { cn } from '@/lib/utils'
 
 interface SimpleChatModeToggleProps {
   simpleChatMode: boolean
   onChange: (simpleChatMode: boolean) => void
+  /** Renders a single icon button for the narrow mobile composer row. */
+  compact?: boolean
 }
 
 const MODES = [
@@ -11,7 +15,27 @@ const MODES = [
 ] as const
 
 /** Segmented Full/Simple switch for the `simpleChatMode` preference, mirroring Settings → General. */
-export function SimpleChatModeToggle({ simpleChatMode, onChange }: SimpleChatModeToggleProps) {
+export function SimpleChatModeToggle({ simpleChatMode, onChange, compact = false }: SimpleChatModeToggleProps) {
+  if (compact) {
+    return (
+      <button
+        type="button"
+        aria-label="Simple chat mode"
+        aria-pressed={simpleChatMode}
+        title={simpleChatMode
+          ? 'Simple chat: only your messages and the assistant replies'
+          : 'Full chat: tool calls, reasoning, diffs and agent details'}
+        onClick={() => onChange(!simpleChatMode)}
+        className={cn(
+          getIconToggleButtonClassName(simpleChatMode),
+          'flex h-11 w-11 shrink-0 items-center justify-center p-0',
+        )}
+      >
+        <MessagesSquare className="h-5 w-5" />
+      </button>
+    )
+  }
+
   return (
     <div
       role="group"

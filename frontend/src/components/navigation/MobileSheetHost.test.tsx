@@ -20,6 +20,10 @@ vi.mock('@/components/navigation/MoreDrawer', () => ({
   MoreDrawer: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="more-drawer">MoreDrawer</div> : null,
 }))
+vi.mock('@/components/usage/SessionUsageSheet', () => ({
+  SessionUsageSheet: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="session-usage-sheet">SessionUsageSheet</div> : null,
+}))
 
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -129,6 +133,20 @@ describe('MobileSheetHost', () => {
       </MemoryRouter>,
     )
     expect(screen.getByTestId('more-drawer')).toBeInTheDocument()
+  })
+
+  it('renders SessionUsageSheet when mobileTab=usage', () => {
+    vi.mocked(useMobileTabBar).mockReturnValue({
+      openSheet: 'usage',
+      open: vi.fn(),
+      close: vi.fn(),
+    })
+    render(
+      <MemoryRouter initialEntries={['/repos/1/sessions/ses_1?mobileTab=usage']}>
+        <MobileSheetHost />
+      </MemoryRouter>,
+    )
+    expect(screen.getByTestId('session-usage-sheet')).toBeInTheDocument()
   })
 
   it('closes sheet when onClose is called', () => {

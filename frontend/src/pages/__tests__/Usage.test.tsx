@@ -173,6 +173,35 @@ describe('Usage', () => {
     expect(screen.getAllByText('$0.420').length).toBeGreaterThan(0)
   })
 
+  it('restores the model filter from local storage', () => {
+    localStorage.setItem('ocm.usage-models.v1', JSON.stringify(['anthropic/claude-sonnet']))
+
+    renderUsage()
+
+    expect(screen.getByText(/Filtered to 1 model/)).toBeTruthy()
+  })
+
+  it('caps the model chips and resets the range and models together', async () => {
+    const user = userEvent.setup()
+
+    renderUsage()
+
+    await user.click(screen.getByRole('combobox', { name: 'Usage range' }))
+    await user.click(await screen.findByRole('option', { name: 'Last 15 minutes' }))
+    await user.click(screen.getByRole('combobox', { name: 'Model filter' }))
+    await user.click(await screen.findByRole('option', { name: 'anthropic/claude-sonnet' }))
+    await user.click(screen.getByRole('option', { name: 'openai/gpt-5' }))
+
+    expect(screen.getByText('+1 more')).toBeTruthy()
+    expect(screen.getByText(/Filtered to 2 models/)).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Reset filters' }))
+
+    expect(screen.queryByText(/Filtered to/)).toBeNull()
+    expect(screen.getByRole('combobox', { name: 'Usage range' }).textContent).toBe('Last 4 hours')
+    expect(mocks.useSessionStats).toHaveBeenLastCalledWith({ range: '4h', from: null, to: null })
+  })
+
   it('lists the most expensive session with a link into the repo', () => {
     renderUsage()
 
@@ -208,7 +237,7 @@ describe('Usage', () => {
 
     renderUsage()
 
-    expect(mocks.useSessionStats).toHaveBeenLastCalledWith({ range: '30d', from: null, to: null })
+    expect(mocks.useSessionStats).toHaveBeenLastCalledWith({ range: '4h', from: null, to: null })
 
     await user.click(screen.getByRole('combobox', { name: 'Usage range' }))
     await user.click(await screen.findByRole('option', { name: 'Last 15 minutes' }))

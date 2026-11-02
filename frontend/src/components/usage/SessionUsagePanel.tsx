@@ -5,6 +5,7 @@ import { ActivitySpinner } from '@/components/ui/activity-spinner'
 import { ErrorBanner } from '@/components/ui/error-banner'
 import { UsageRangePicker } from './UsageRangePicker'
 import { UsageModelFilter } from './UsageModelFilter'
+import { UsageResetFiltersButton } from './UsageResetFiltersButton'
 import { UsageTokenBreakdown } from './UsageTokenBreakdown'
 import { UsageModelsTable } from './UsageModelsTable'
 import { UsageToolsTable } from './UsageToolsTable'
@@ -60,12 +61,27 @@ export function SessionUsagePanel({ sessionID }: { sessionID: string }) {
     return summarizeSessionUsage(data.messages, bounds, activeModels)
   }, [data, bounds, activeModels])
 
+  const filtersActive = selectedModels.length > 0 || selection.range !== ALL_USAGE_RANGE_SELECTION.range
+
+  const resetFilters = () => {
+    setSelectedModels([])
+    setSelection(ALL_USAGE_RANGE_SELECTION)
+  }
+
   const shell = (content: ReactNode) => (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-border px-3 py-2">
         <div className="flex flex-col gap-2">
           <UsageRangePicker selection={selection} onChange={setSelection} />
-          <UsageModelFilter models={modelRefs} selected={selectedModels} onChange={setSelectedModels} />
+          <div className="flex items-center gap-1.5">
+            <UsageModelFilter
+              models={modelRefs}
+              selected={selectedModels}
+              onChange={setSelectedModels}
+              className="min-w-0 flex-1"
+            />
+            {filtersActive && <UsageResetFiltersButton onReset={resetFilters} />}
+          </div>
         </div>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">{content}</div>

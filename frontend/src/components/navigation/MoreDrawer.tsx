@@ -25,7 +25,7 @@ interface MoreDrawerProps {
 const ACCOUNT_ITEM_KEYS: ReadonlySet<string> = new Set(['settings', 'logout'])
 
 const ITEM_GROUPS: ReadonlyArray<{ label: string; keys: ReadonlySet<string> }> = [
-  { label: 'Workspace', keys: new Set(['files', 'source-control', 'terminal', 'preview', 'walkthrough']) },
+  { label: 'Workspace', keys: new Set(['session-usage', 'files', 'source-control', 'terminal', 'preview', 'walkthrough']) },
   { label: 'Project', keys: new Set(['mcp', 'skills', 'actions', 'schedules', 'all-schedules', 'reset-permissions']) },
 ]
 
@@ -140,6 +140,8 @@ export function MoreDrawer({ isOpen, onClose }: MoreDrawerProps) {
         p.set('dialog', item.dialog!)
         p.delete('mobileTab')
       }, 'replace')
+    } else if (item.panelTool === 'usage') {
+      updateParams((p) => p.set('mobileTab', 'usage'), 'replace')
     }
   }
 

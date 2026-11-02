@@ -26,6 +26,7 @@ export function UsageModelFilter({
       placeholder="All models"
       searchPlaceholder="Search models..."
       emptyMessage="No models in this range"
+      maxChips={1}
       disabled={disabled || models.length === 0}
       className={className}
     />

@@ -45,7 +45,7 @@ describe('useMobileTabBar', () => {
   })
 
   it('handles all valid MobileSheetKey values', () => {
-    const validKeys = ['sessions', 'files', 'notifications', 'more'] as const
+    const validKeys = ['sessions', 'files', 'notifications', 'more', 'usage'] as const
     validKeys.forEach((key) => {
       const { result } = renderHook(() => useMobileTabBar(), {
         wrapper: createRouterWrapper([`/?mobileTab=${key}`]),

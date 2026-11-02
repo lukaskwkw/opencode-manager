@@ -46,32 +46,35 @@ describe('buildMoreItems', () => {
 
   it('returns session-specific items for /repos/:id/sessions/:sid', () => {
     const items = buildMoreItems('/repos/42/sessions/abc')
-    expect(items).toHaveLength(14)
+    expect(items).toHaveLength(15)
     expect(items[0].key).toBe('home')
     expect(items[1].key).toBe('usage')
-    expect(items[2].key).toBe('files')
-    expect(items[3].key).toBe('mcp')
-    expect(items[4].key).toBe('skills')
-    expect(items[5].key).toBe('reset-permissions')
-    expect(items[6].key).toBe('schedules')
-    expect(items[6].to).toBe('/repos/42/schedules')
-    expect(items[7].key).toBe('source-control')
-    expect(items[8].key).toBe('terminal')
-    expect(items[8].dialog).toBe('terminal')
-    expect(items[9].key).toBe('walkthrough')
-    expect(items[9].dialog).toBe('walkthrough')
-    expect(items[10].key).toBe('actions')
-    expect(items[10].dialog).toBe('actions')
-    expect(items[11].key).toBe('preview')
-    expect(items[11].dialog).toBe('preview')
-    expect(items[12].key).toBe('settings')
-    expect(items[13].key).toBe('logout')
+    expect(items[2].key).toBe('session-usage')
+    expect(items[2].panelTool).toBe('usage')
+    expect(items[3].key).toBe('files')
+    expect(items[4].key).toBe('mcp')
+    expect(items[5].key).toBe('skills')
+    expect(items[6].key).toBe('reset-permissions')
+    expect(items[7].key).toBe('schedules')
+    expect(items[7].to).toBe('/repos/42/schedules')
+    expect(items[8].key).toBe('source-control')
+    expect(items[9].key).toBe('terminal')
+    expect(items[9].dialog).toBe('terminal')
+    expect(items[10].key).toBe('walkthrough')
+    expect(items[10].dialog).toBe('walkthrough')
+    expect(items[11].key).toBe('actions')
+    expect(items[11].dialog).toBe('actions')
+    expect(items[12].key).toBe('preview')
+    expect(items[12].dialog).toBe('preview')
+    expect(items[13].key).toBe('settings')
+    expect(items[14].key).toBe('logout')
   })
 
   it('returns only the server tools a linked server can serve for /servers/:id/sessions/:sid', () => {
     const items = buildMoreItems('/servers/srv_kitchen/sessions/abc')
     expect(items.map((item) => item.key)).toEqual([
       'home',
+      'session-usage',
       'mcp',
       'skills',
       'source-control',
@@ -79,6 +82,7 @@ describe('buildMoreItems', () => {
       'settings',
       'logout',
     ])
+    expect(items[1].panelTool).toBe('usage')
   })
 
   it('returns only the server tools a linked server can serve for /servers/:id/projects', () => {
@@ -97,14 +101,15 @@ describe('buildMoreItems', () => {
 
   it('omits the Actions item for an Assistant session', () => {
     const items = buildMoreItems('/repos/0/sessions/abc')
-    expect(items).toHaveLength(13)
+    expect(items).toHaveLength(14)
     expect(items.map((item) => item.key)).not.toContain('actions')
-    expect(items[8].key).toBe('terminal')
-    expect(items[9].key).toBe('walkthrough')
-    expect(items[10].key).toBe('preview')
-    expect(items[10].dialog).toBe('preview')
-    expect(items[11].key).toBe('settings')
-    expect(items[12].key).toBe('logout')
+    expect(items[2].key).toBe('session-usage')
+    expect(items[9].key).toBe('terminal')
+    expect(items[10].key).toBe('walkthrough')
+    expect(items[11].key).toBe('preview')
+    expect(items[11].dialog).toBe('preview')
+    expect(items[12].key).toBe('settings')
+    expect(items[13].key).toBe('logout')
   })
 
   it('returns assistant workspace items for /repos/:id/assistant', () => {
@@ -275,6 +280,13 @@ describe('buildNavModel', () => {
   it('keeps the manager usage route out of linked-server navigation', () => {
     expect(buildMoreItems('/servers/srv_kitchen/sessions/abc').map((item) => item.key)).not.toContain('usage')
     expect(buildMoreItems('/servers/srv_kitchen/projects').map((item) => item.key)).not.toContain('usage')
+  })
+
+  it('offers the session usage panel on linked-server sessions', () => {
+    const usage = buildMoreItems('/servers/srv_kitchen/sessions/abc')
+      .find((item) => item.key === 'session-usage')
+    expect(usage?.label).toBe('Usage')
+    expect(usage?.panelTool).toBe('usage')
   })
 
   it('offers the usage route on every manager route', () => {

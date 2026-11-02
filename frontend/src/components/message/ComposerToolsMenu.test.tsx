@@ -67,8 +67,6 @@ function renderMenu(overrides: Partial<React.ComponentProps<typeof ComposerTools
     goalLabel: 'Goal mode: the next message becomes the objective',
     onToggleGoal: vi.fn(),
     onAttachFile: vi.fn(),
-    simpleChatMode: false,
-    onToggleSimpleChat: vi.fn(),
     ...overrides,
   }
   render(<ComposerToolsMenu {...props} />)
@@ -84,8 +82,6 @@ function renderRemoteMenu(overrides: Partial<React.ComponentProps<typeof Compose
     goalLabel: 'Goal mode: the next message becomes the objective',
     onToggleGoal: vi.fn(),
     onAttachFile: vi.fn(),
-    simpleChatMode: false,
-    onToggleSimpleChat: vi.fn(),
     ...overrides,
   }
   render(
@@ -228,17 +224,6 @@ describe('ComposerToolsMenu', () => {
     await user.click(await screen.findByRole('menuitemcheckbox', { name: /Goal mode/ }))
 
     expect(props.onToggleGoal).toHaveBeenCalledTimes(1)
-  })
-
-  it('toggles simple chat mode from the menu', async () => {
-    const user = userEvent.setup()
-    mockPermissionMode()
-    const props = renderMenu()
-
-    await user.click(screen.getByRole('button', { name: 'Composer options' }))
-    await user.click(await screen.findByRole('menuitemcheckbox', { name: /Simple chat mode/ }))
-
-    expect(props.onToggleSimpleChat).toHaveBeenCalledTimes(1)
   })
 
   it('shows why goal mode is unavailable', async () => {

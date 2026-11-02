@@ -82,20 +82,15 @@ export function isManagerOnlyNavItem(item: MoreDrawerItem): boolean {
   return MANAGER_ONLY_ITEM_KEYS.has(item.key)
 }
 
-/** True for any open session transcript, local repo or linked server. */
-function isAnySessionDetailPath(pathname: string): boolean {
-  return SESSION_DETAIL_PATH.test(pathname) || SERVER_SESSION_DETAIL_PATH.test(pathname)
+function getSessionUsageItem(): MoreDrawerItem {
+  return { key: 'session-usage', label: 'Usage', icon: BarChart3, panelTool: 'usage' }
 }
 
 /** Route-scoped tool items, shown in the desktop tool rail instead of the sidebar. */
 export function buildToolItems(pathname: string): MoreDrawerItem[] {
   const routeItems = buildNavModel(pathname).items.filter((item) => !NON_TOOL_ITEM_KEYS.has(item.key))
-  const sessionUsageItems: MoreDrawerItem[] = isAnySessionDetailPath(pathname)
-    ? [{ key: 'session-usage', label: 'Usage', icon: BarChart3, panelTool: 'usage' }]
-    : []
   return [
     { key: 'sessions', label: 'Sessions', icon: List, panelTool: 'sessions' },
-    ...sessionUsageItems,
     ...routeItems,
   ]
 }
@@ -112,6 +107,7 @@ function buildRouteNavModel(pathname: string): NavModel {
     return {
       primary: [getAssistantNavItem()],
       items: [
+        ...(SERVER_SESSION_DETAIL_PATH.test(pathname) ? [getSessionUsageItem()] : []),
         { key: 'mcp', label: 'MCP', icon: Plug, dialog: 'mcp' },
         { key: 'skills', label: 'Skills', icon: Sparkles, dialog: 'skills' },
         { key: 'source-control', label: 'Source Control', icon: GitCommitHorizontal, dialog: 'sourceControl' },
@@ -149,6 +145,7 @@ function buildRouteNavModel(pathname: string): NavModel {
     const repoId = sessionDetailMatch[1]
     const isAssistantRepo = repoId === String(ASSISTANT_REPO_ID)
     const items: MoreDrawerItem[] = [
+      getSessionUsageItem(),
       { key: 'files', label: 'Files', icon: Folder, dialog: 'files' },
       { key: 'mcp', label: 'MCP', icon: Plug, dialog: 'mcp' },
       { key: 'skills', label: 'Skills', icon: Sparkles, dialog: 'skills' },

@@ -285,7 +285,7 @@ describe('MoreDrawer', () => {
     const sectionLabels = (name: string) =>
       within(screen.getByRole('region', { name })).getAllByRole('button').map((button) => button.textContent)
 
-    expect(sectionLabels('Workspace')).toEqual(['Files', 'Source Control', 'Terminal', 'Walkthrough', 'Preview'])
+    expect(sectionLabels('Workspace')).toEqual(['Usage', 'Files', 'Source Control', 'Terminal', 'Walkthrough', 'Preview'])
     expect(sectionLabels('Project')).toEqual(['MCP', 'Skills', 'Reset Permissions', 'Schedules', 'Actions'])
     expect(screen.getAllByText('Settings')).toHaveLength(1)
     expect(screen.getAllByText('Logout')).toHaveLength(1)
@@ -335,6 +335,22 @@ describe('MoreDrawer', () => {
     expect(navigateMock).toHaveBeenCalledWith(
       { search: 'mobileTab=sessions' },
       { state: { urlParamHistory: { previousSearch: '?mobileTab=more' } } },
+    )
+  })
+
+  it('opens the session usage sheet from the Workspace group', () => {
+    const navigateMock = vi.fn()
+    vi.mocked(useNavigate).mockReturnValue(navigateMock)
+    mockAuth()
+    mockServerHealth()
+    renderMoreDrawer({ initialEntry: '/repos/1/sessions/session-1?mobileTab=more', routePath: '/repos/:id/sessions/:sessionId' })
+
+    const workspace = within(screen.getByRole('region', { name: 'Workspace' }))
+    fireEvent.click(workspace.getByText('Usage'))
+
+    expect(navigateMock).toHaveBeenCalledWith(
+      { search: 'mobileTab=usage' },
+      { replace: true },
     )
   })
 

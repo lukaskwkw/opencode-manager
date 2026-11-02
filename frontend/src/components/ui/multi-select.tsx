@@ -19,6 +19,8 @@ interface MultiSelectProps {
   allLabel?: string
   /** Accessible name for the trigger, which has no visible label. */
   ariaLabel?: string
+  /** Caps the chips shown in the trigger; extra selections collapse into a "+N more" badge. */
+  maxChips?: number
   disabled?: boolean
   className?: string
 }
@@ -32,6 +34,7 @@ export function MultiSelect({
   emptyMessage = 'No options found',
   allLabel,
   ariaLabel,
+  maxChips,
   disabled = false,
   className,
 }: MultiSelectProps) {
@@ -98,6 +101,12 @@ export function MultiSelect({
     }
   }, [isOpen])
 
+  const visibleValues = maxChips === undefined ? value : value.slice(0, maxChips)
+  const hiddenValues = value.slice(visibleValues.length)
+  const hiddenLabels = hiddenValues.map(
+    (hiddenValue) => options.find((option) => option.value === hiddenValue)?.label ?? hiddenValue,
+  )
+
   const handleInputKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault()
@@ -134,8 +143,9 @@ export function MultiSelect({
         onClick={handleOpen}
         onKeyDown={handleTriggerKeyDown}
         className={cn(
-          'flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm transition-colors cursor-pointer',
+          'flex min-h-9 w-full items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm transition-colors cursor-pointer',
           'focus-within:outline-none focus-within:ring-1 focus-within:ring-ring',
+          maxChips === undefined ? 'flex-wrap' : 'flex-nowrap overflow-hidden',
           disabled && 'cursor-not-allowed opacity-50',
           value.length === 0 && 'pr-8'
         )}
@@ -143,19 +153,19 @@ export function MultiSelect({
         {value.length === 0 && (
           <span className="text-muted-foreground text-sm">{placeholder}</span>
         )}
-        {value.map(v => {
+        {visibleValues.map(v => {
           const option = options.find(o => o.value === v)
           return (
             <span
               key={v}
-              className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium"
+              className="inline-flex min-w-0 shrink items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium"
             >
-              {option?.label ?? v}
+              <span className="truncate" title={option?.label ?? v}>{option?.label ?? v}</span>
               <button
                 type="button"
                 onClick={(e) => handleRemove(v, e)}
                 disabled={disabled}
-                className="text-muted-foreground hover:text-foreground disabled:pointer-events-none"
+                className="shrink-0 text-muted-foreground hover:text-foreground disabled:pointer-events-none"
                 aria-label={`Remove ${option?.label ?? v}`}
               >
                 <X className="h-3 w-3" />
@@ -163,6 +173,14 @@ export function MultiSelect({
             </span>
           )
         })}
+        {hiddenValues.length > 0 && (
+          <span
+            className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
+            title={hiddenLabels.join('\n')}
+          >
+            +{hiddenValues.length} more
+          </span>
+        )}
         <ChevronDown className={cn(
           'ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform',
           isOpen && 'rotate-180'

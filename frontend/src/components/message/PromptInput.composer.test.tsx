@@ -197,6 +197,16 @@ describe('PromptInput composer layout', () => {
     expect(screen.getByRole('button', { name: 'Simple' })).toHaveAttribute('aria-pressed', 'false')
   })
 
+  it('offers a compact chat detail toggle next to the mic on mobile', () => {
+    mocks.useMobile.mockReturnValue(true)
+    renderComponent()
+
+    const toggle = screen.getByRole('button', { name: 'Simple chat mode' })
+    expect(controlsRow().lastElementChild).toContainElement(toggle)
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    expect(toggle.nextElementSibling).toBe(voiceMicButton())
+  })
+
   it('anchors the activity bar in the gap above the controls row', () => {
     useSessionStatus.getState().setStatus('test-session', { type: 'busy' })
 

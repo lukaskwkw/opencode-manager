@@ -10,7 +10,7 @@ beforeEach(() => {
 })
 
 describe('useUsageRangePreference', () => {
-  it('defaults to the last 30 days', () => {
+  it('defaults to the last 4 hours', () => {
     const { result } = renderHook(() => useUsageRangePreference(STORAGE_KEY))
 
     expect(result.current[0]).toEqual(DEFAULT_USAGE_RANGE_SELECTION)

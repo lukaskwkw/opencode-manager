@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { BarChart3 } from 'lucide-react'
 import { formatOpenCodeModelRef } from '@opencode-manager/shared/opencode'
 import { Header } from '@/components/ui/header'
@@ -6,6 +6,7 @@ import { ErrorBanner } from '@/components/ui/error-banner'
 import { ActivitySpinner } from '@/components/ui/activity-spinner'
 import { UsageRangePicker } from '@/components/usage/UsageRangePicker'
 import { UsageModelFilter } from '@/components/usage/UsageModelFilter'
+import { UsageResetFiltersButton } from '@/components/usage/UsageResetFiltersButton'
 import { UsageModelScopeCards } from '@/components/usage/UsageModelScopeCards'
 import { UsageSummaryCards } from '@/components/usage/UsageSummaryCards'
 import { UsageTokenBreakdown } from '@/components/usage/UsageTokenBreakdown'
@@ -16,7 +17,9 @@ import { RecentSessionsTable } from '@/components/usage/RecentSessionsTable'
 import { useSessionStats } from '@/hooks/useSessionStats'
 import { useSessionsAcrossDirectories } from '@/hooks/useOpenCode'
 import { useNavigableRepos } from '@/hooks/useSidebarRepoGroups'
+import { useUsageModelsPreference } from '@/hooks/useUsageModelsPreference'
 import { useUsageRangePreference } from '@/hooks/useUsageRangePreference'
+import { DEFAULT_USAGE_RANGE_SELECTION } from '@/lib/usageRange'
 import {
   filterModelUsage,
   formatStatsRange,
@@ -28,7 +31,7 @@ const RECENT_SESSION_SOURCE_LIMIT = 100
 
 export function Usage() {
   const [selection, setSelection] = useUsageRangePreference()
-  const [selectedModels, setSelectedModels] = useState<string[]>([])
+  const [selectedModels, setSelectedModels] = useUsageModelsPreference()
   const stats = useSessionStats(selection)
   const { data: sessions } = useSessionsAcrossDirectories([], {
     allDirectories: true,
@@ -40,21 +43,28 @@ export function Usage() {
     () => stats.data?.models.map((entry) => formatOpenCodeModelRef(entry.model)) ?? [],
     [stats.data],
   )
-  const modelKey = modelRefs.join('|')
 
   useEffect(() => {
-    const available = new Set(modelKey === '' ? [] : modelKey.split('|'))
+    if (stats.data === undefined) return
+    const available = new Set(modelRefs)
     setSelectedModels((current) => {
       const next = current.filter((model) => available.has(model))
       return next.length === current.length ? current : next
     })
-  }, [modelKey])
+  }, [stats.data, modelRefs, setSelectedModels])
 
   const modelScope = useMemo(() => {
     if (!stats.data || selectedModels.length === 0) return null
     const models = filterModelUsage(stats.data.models, selectedModels)
     return { models, ...sumModelUsage(models) }
   }, [stats.data, selectedModels])
+
+  const filtersActive = selectedModels.length > 0 || selection.range !== DEFAULT_USAGE_RANGE_SELECTION.range
+
+  const resetFilters = () => {
+    setSelectedModels([])
+    setSelection(DEFAULT_USAGE_RANGE_SELECTION)
+  }
 
   const hasDailyActivity = hasDailyActivityForBounds(stats.bounds)
 
@@ -77,6 +87,7 @@ export function Usage() {
               onChange={setSelectedModels}
               className="w-full sm:w-72"
             />
+            {filtersActive && <UsageResetFiltersButton onReset={resetFilters} />}
           </div>
           {stats.bounds === null ? (
             <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
