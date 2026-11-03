@@ -19,11 +19,13 @@ import { cn } from '@/lib/utils'
 interface UsageRangePickerProps {
   selection: UsageRangeSelection
   onChange: (selection: UsageRangeSelection) => void
+  /** Horizontal alignment of the picker inside its row; defaults to end. */
+  align?: 'start' | 'end'
   className?: string
 }
 
 /** Range selector shared by the usage page and the session usage panel, with custom bounds. */
-export function UsageRangePicker({ selection, onChange, className }: UsageRangePickerProps) {
+export function UsageRangePicker({ selection, onChange, align = 'end', className }: UsageRangePickerProps) {
   const isCustom = selection.range === 'custom'
   const invalidBounds =
     isCustom
@@ -32,7 +34,7 @@ export function UsageRangePicker({ selection, onChange, className }: UsageRangeP
     && resolveUsageRangeBounds(selection) === null
 
   return (
-    <div className={cn('flex flex-wrap items-center justify-end gap-1.5', className)}>
+    <div className={cn('flex flex-wrap items-center gap-1.5', align === 'end' ? 'justify-end' : 'justify-start', className)}>
       <Select
         value={selection.range}
         onValueChange={(value) => onChange(withUsageRange(selection, value as UsageRange))}

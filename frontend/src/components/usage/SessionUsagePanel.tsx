@@ -72,16 +72,20 @@ export function SessionUsagePanel({ sessionID }: { sessionID: string }) {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-border px-3 py-2">
         <div className="flex flex-col gap-2">
-          <UsageRangePicker selection={selection} onChange={setSelection} />
-          <div className="flex items-center gap-1.5">
-            <UsageModelFilter
-              models={modelRefs}
-              selected={selectedModels}
-              onChange={setSelectedModels}
+          <div className="flex items-center justify-between gap-2">
+            <UsageRangePicker
+              selection={selection}
+              onChange={setSelection}
+              align="start"
               className="min-w-0 flex-1"
             />
-            {filtersActive && <UsageResetFiltersButton onReset={resetFilters} />}
+            {filtersActive && <UsageResetFiltersButton onReset={resetFilters} iconOnly />}
           </div>
+          <UsageModelFilter
+            models={modelRefs}
+            selected={selectedModels}
+            onChange={setSelectedModels}
+          />
         </div>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">{content}</div>

@@ -89,6 +89,20 @@ describe('SessionUsagePanel', () => {
     expect(screen.getByText('No assistant steps in this range.')).toBeTruthy()
   })
 
+  it('clears the model filter from the compact reset button', async () => {
+    const user = userEvent.setup()
+    render(<SessionUsagePanel sessionID="ses_1" />)
+
+    await user.click(screen.getByRole('combobox', { name: 'Model filter' }))
+    await user.click(await screen.findByRole('option', { name: 'opencode-go/deepseek' }))
+
+    expect(screen.getAllByText('$0.010').length).toBeGreaterThan(0)
+
+    await user.click(screen.getByRole('button', { name: 'Reset filters' }))
+
+    expect(screen.getByText('$0.510')).toBeTruthy()
+  })
+
   it('notes when only the newest steps were summarized', () => {
     mockMessages([DEEPSEEK_STEP, CLAUDE_STEP], true)
 
