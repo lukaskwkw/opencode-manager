@@ -10,6 +10,7 @@ import { allMigrations } from '../../src/db/migrations'
 import { createRepo, setRepoSetting } from '../../src/db/queries'
 import { createGitService } from '../../src/services/git/GitService'
 import { ProjectConfigService, ProjectConfigError } from '../../src/services/project-config'
+import { resolveActionShell } from '../../src/utils/action-shell'
 import type { GitAuthService } from '../../src/services/git-auth'
 import type { CreateTerminalInput, TerminalService } from '../../src/services/terminal'
 import { formatTerminalTitle } from '@opencode-manager/shared/utils'
@@ -877,7 +878,7 @@ describe('ProjectConfigService runAction', () => {
     fs.rmSync(directory, { recursive: true, force: true })
   })
 
-  it('creates an action terminal with /bin/sh -c and the encoded action id', async () => {
+  it('creates an action terminal with the resolved POSIX shell and the encoded action id', async () => {
     service.setPersonalActions(repo, [createAction({ url: 'http://localhost:5173/{worktree}' })])
     const terminalService = createFakeTerminalService()
 
@@ -887,7 +888,7 @@ describe('ProjectConfigService runAction', () => {
       kind: 'action',
       actionId: 'serve',
       name: 'Serve',
-      command: '/bin/sh',
+      command: resolveActionShell(),
       args: ['-c', 'pnpm dev'],
     })
     expect(response).toEqual({
@@ -1111,7 +1112,7 @@ describe('ProjectConfigService runWorktreeSetup', () => {
     expect(terminalService.create).toHaveBeenCalledWith(directory, {
       kind: 'setup',
       name: 'Worktree setup',
-      command: '/bin/sh',
+      command: resolveActionShell(),
       args: ['-c', 'set -e\npnpm install\npnpm build'],
       env: { ROOT_PROJECT_PATH: repo.fullPath },
     })

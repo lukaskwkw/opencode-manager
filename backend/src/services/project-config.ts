@@ -21,6 +21,7 @@ import { executeCommand } from '../utils/process'
 import { getErrorMessage } from '../utils/error-utils'
 import { logger } from '../utils/logger'
 import { canonicalPathSync, writeFileAtomicSync } from '../utils/fs-safe'
+import { resolveActionShell } from '../utils/action-shell'
 import type { GitService } from './git/GitService'
 import type { GitAuthService } from './git-auth'
 import type { TerminalService } from './terminal'
@@ -208,7 +209,7 @@ export class ProjectConfigService {
           kind: 'action',
           actionId,
           name: action.name,
-          command: '/bin/sh',
+          command: resolveActionShell(),
           args: ['-c', action.command],
         }))
 
@@ -263,7 +264,7 @@ export class ProjectConfigService {
       const terminal = await terminalService.create(worktreeDirectory, {
         kind: 'setup',
         name: 'Worktree setup',
-        command: '/bin/sh',
+        command: resolveActionShell(),
         args: ['-c', ['set -e', ...commands].join('\n')],
         env: { ROOT_PROJECT_PATH: projectRepo.fullPath },
       })

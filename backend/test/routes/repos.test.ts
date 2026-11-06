@@ -87,6 +87,7 @@ import { ProjectConfigService } from '../../src/services/project-config'
 import type { SecretsService } from '../../src/services/secrets'
 import { RepoWorkspaceService } from '../../src/services/repo-workspace'
 import { createGitService } from '../../src/services/git/GitService'
+import { resolveActionShell } from '../../src/utils/action-shell'
 import type { GitAuthService } from '../../src/services/git-auth'
 import type { ScheduleService } from '../../src/services/schedules'
 import type { TerminalService } from '../../src/services/terminal'
@@ -616,7 +617,7 @@ describe('Repo Routes', () => {
         expect(vi.mocked(mockTerminalService.create)).toHaveBeenCalledWith(worktreeDirectory, {
           kind: 'setup',
           name: 'Worktree setup',
-          command: '/bin/sh',
+          command: resolveActionShell(),
           args: ['-c', 'set -e\npnpm install\npnpm repo-setup'],
           env: { ROOT_PROJECT_PATH: '/tmp/repos/main' },
         })

@@ -10,6 +10,7 @@ import { createRepo } from '../../src/db/queries'
 import { createRepoProjectConfigRoutes } from '../../src/routes/repo-project-config'
 import { ProjectConfigService } from '../../src/services/project-config'
 import { createGitService } from '../../src/services/git/GitService'
+import { resolveActionShell } from '../../src/utils/action-shell'
 import { createStubOpenCodeClient } from '../helpers/stub-opencode-client'
 import { formatTerminalTitle } from '@opencode-manager/shared/utils'
 import type { GitAuthService } from '../../src/services/git-auth'
@@ -370,7 +371,7 @@ describe('Repo Project Config Routes', () => {
       kind: 'action',
       actionId: 'serve',
       name: 'Serve',
-      command: '/bin/sh',
+      command: resolveActionShell(),
       args: ['-c', 'pnpm dev'],
     })
   })
