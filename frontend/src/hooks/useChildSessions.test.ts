@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { needsChildSessions } from './useChildSessions'
+import { childSessionsOrDefault, needsChildSessions } from './useChildSessions'
 import type {
   SessionMessageAssistant,
   SessionMessageAssistantTool,
@@ -48,8 +48,23 @@ const userMessage = (id: string, text: string): SessionMessageUser => ({
   time: { created: Date.now() },
 })
 
-describe('needsChildSessions', () => {
-  it('returns true for an active session even without subagent parts', () => {
+describe('childSessionsOrDefault', () => {
+  it('keeps a fetched child list', () => {
+    const children = [{ id: 'child-1' }] as never
+
+    expect(childSessionsOrDefault(children)).toBe(children)
+  })
+
+  it('falls back for a stale cached object instead of breaking the transcript', () => {
+    expect(childSessionsOrDefault({})).toEqual([])
+  })
+
+  it('falls back when no data is cached', () => {
+    expect(childSessionsOrDefault(undefined)).toEqual([])
+  })
+})
+
+describe('needsChildSessions', () => {  it('returns true for an active session even without subagent parts', () => {
     const messages: SessionMessageInfo[] = [userMessage('1', 'hello'), assistantMessage('2', [textPart('hi')])]
 
     expect(needsChildSessions(messages, true)).toBe(true)

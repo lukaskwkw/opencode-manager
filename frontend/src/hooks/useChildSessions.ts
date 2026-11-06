@@ -6,6 +6,11 @@ const CHILD_SESSIONS_POLL_INTERVAL_MS = 5000
 
 const EMPTY_CHILDREN: SessionInfo[] = []
 
+/** Keeps a stale or corrupted persisted cache entry from breaking the transcript tree. */
+export function childSessionsOrDefault(data: unknown): SessionInfo[] {
+  return Array.isArray(data) ? (data as SessionInfo[]) : EMPTY_CHILDREN
+}
+
 export function needsChildSessions(messages: SessionMessageInfo[], isSessionActive: boolean): boolean {
   if (isSessionActive) return true
   return messages.some(
@@ -29,5 +34,5 @@ export function useChildSessions(sessionID: string | undefined, directory: strin
     refetchInterval: CHILD_SESSIONS_POLL_INTERVAL_MS,
     refetchOnWindowFocus: false,
   })
-  return query.data ?? EMPTY_CHILDREN
+  return childSessionsOrDefault(query.data)
 }
